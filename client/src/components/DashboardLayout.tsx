@@ -27,6 +27,9 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { FormEvent } from "react";
 
 const menuItems = [
   { icon: Grid2X2, label: "Tool hub", path: "/" },
@@ -56,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (user.role !== "admin") {
-    return <RestrictedScreen logout={user ? undefined : undefined} />;
+    return <RestrictedScreen />;
   }
 
   return (
@@ -72,6 +75,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 }
 
 function SignInScreen() {
+  const { loginWithCredentials, isCredentialLoginPending } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const hasSingleSignOn = Boolean(import.meta.env.VITE_APP_ID);
+
+  const submitCredentials = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    try {
+      await loginWithCredentials({ username, password });
+    } catch {
+      setError("The administrator credentials were not accepted.");
+    }
+  };
+
   return (
     <main className="relative grid min-h-screen overflow-hidden bg-[#0c1b1e] px-6 py-8 text-[#f8f6ef] place-items-center">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(96,168,150,0.20),transparent_28%),radial-gradient(circle_at_85%_85%,rgba(213,166,101,0.13),transparent_24%)]" />
@@ -84,19 +103,22 @@ function SignInScreen() {
             Sign in with your authorized HousingPA account to access the internal tool hub.
           </p>
         </div>
-        <Button
-          onClick={() => startLogin()}
-          className="mt-10 h-12 w-full rounded-xl bg-[#d9b879] text-sm font-semibold text-[#172528] shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition hover:bg-[#edd39e] active:scale-[0.98]"
-        >
-          Sign in securely
-        </Button>
+        <form className="mt-8 space-y-4" onSubmit={submitCredentials}>
+          <div className="space-y-1.5"><Label htmlFor="admin-username" className="text-xs font-semibold text-white/70">Username</Label><Input id="admin-username" value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" required className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35" /></div>
+          <div className="space-y-1.5"><Label htmlFor="admin-password" className="text-xs font-semibold text-white/70">Password</Label><Input id="admin-password" type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete="current-password" required className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35" /></div>
+          {error && <p role="alert" className="text-xs font-medium text-[#f5bf9e]">{error}</p>}
+          <Button disabled={isCredentialLoginPending} className="h-12 w-full rounded-xl bg-[#d9b879] text-sm font-semibold text-[#172528] shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition hover:bg-[#edd39e] active:scale-[0.98]">
+            {isCredentialLoginPending ? "Signing in…" : "Sign in securely"}
+          </Button>
+        </form>
+        {hasSingleSignOn && <Button type="button" variant="ghost" onClick={() => startLogin()} className="mt-2 h-10 w-full rounded-xl text-xs font-semibold text-white/60 hover:bg-white/10 hover:text-white">Use HousingPA single sign-on</Button>}
         <p className="mt-5 text-center text-xs leading-5 text-white/40">Restricted to approved administrators.</p>
       </section>
     </main>
   );
 }
 
-function RestrictedScreen({ logout: _logout }: { logout?: () => Promise<void> }) {
+function RestrictedScreen() {
   const { logout } = useAuth();
 
   return (

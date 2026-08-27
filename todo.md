@@ -9,3 +9,6 @@
 - [x] Add automated tests covering access controls and tool configuration behavior.
 - [x] Verify desktop and mobile presentation and deployment build readiness.
 - [ ] Publish the approved checkpoint and bind admin.housingpa.com in the project domain settings.
+- [x] Assess the authorized Coolify application target and document the admin.housingpa.com deployment configuration.
+- [x] Prepare an authorized Coolify-compatible deployment source for the completed HousingPA Admin hub.
+- [ ] Replace the current admin.housingpa.com deployment with the completed HousingPA Admin hub and verify the live service.

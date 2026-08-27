@@ -21,6 +21,12 @@ export function useAuth(options?: UseAuthOptions) {
     refetchOnWindowFocus: false,
   });
 
+  const localLoginMutation = trpc.auth.localLogin.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+    },
+  });
+
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       utils.auth.me.setData(undefined, null);
@@ -57,14 +63,16 @@ export function useAuth(options?: UseAuthOptions) {
     );
     return {
       user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
+      loading: meQuery.isLoading || logoutMutation.isPending || localLoginMutation.isPending,
+      error: meQuery.error ?? logoutMutation.error ?? localLoginMutation.error ?? null,
       isAuthenticated: Boolean(meQuery.data),
     };
   }, [
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
+    localLoginMutation.error,
+    localLoginMutation.isPending,
     logoutMutation.error,
     logoutMutation.isPending,
   ]);
@@ -92,6 +100,9 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
+    loginWithCredentials: (credentials: { username: string; password: string }) =>
+      localLoginMutation.mutateAsync(credentials),
+    isCredentialLoginPending: localLoginMutation.isPending,
     refresh: () => meQuery.refetch(),
     logout,
   };
