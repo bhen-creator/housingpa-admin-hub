@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,4 +25,18 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const internalTools = mysqlTable("internalTools", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 96 }).notNull().unique(),
+  name: varchar("name", { length: 120 }).notNull(),
+  description: text("description").notNull(),
+  destinationUrl: varchar("destinationUrl", { length: 2048 }).notNull().default(""),
+  category: mysqlEnum("category", ["featured", "future"]).notNull().default("future"),
+  sortOrder: int("sortOrder").notNull().default(100),
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type InternalTool = typeof internalTools.$inferSelect;
+export type InsertInternalTool = typeof internalTools.$inferInsert;

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertInternalTool, InsertUser, internalTools, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,27 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function listInternalTools() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(internalTools);
+}
+
+export async function upsertInternalTool(tool: InsertInternalTool) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("The tool directory is unavailable. Please try again shortly.");
+  }
+
+  await db.insert(internalTools).values(tool).onDuplicateKeyUpdate({
+    set: {
+      name: tool.name,
+      description: tool.description,
+      destinationUrl: tool.destinationUrl,
+      category: tool.category,
+      sortOrder: tool.sortOrder,
+      isActive: tool.isActive,
+    },
+  });
+}
