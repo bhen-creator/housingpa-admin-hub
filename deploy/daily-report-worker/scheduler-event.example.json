@@ -1,0 +1,10 @@
+{
+  "schedule": "DAILY_REPORT_SCHEDULE",
+  "timezone": "DAILY_REPORT_TIMEZONE",
+  "command": "node dist/dailyReportWorkerEntrypoint.js",
+  "environmentNames": {
+    "scheduledFor": "DAILY_REPORT_SCHEDULED_FOR",
+    "runId": "DAILY_REPORT_RUN_ID"
+  },
+  "retryRule": "Reuse the original scheduledFor and runId for every retry."
+}

@@ -132,6 +132,15 @@ export function createDailyReportService(
           ? "No email was sent."
           : "Settings and the provider-neutral run contract validated. No email was sent.",
         error: blocker,
+        errorClass: blocker ? "CONFIGURATION_BLOCKED" : null,
+        providerReceipt: null,
+        retryCount: 0,
+        maxAttempts: 1,
+        nextAttemptAt: null,
+        lastAttemptAt: null,
+        reportFingerprint: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
       };
 
       const recorded = await repository.recordRun(run);

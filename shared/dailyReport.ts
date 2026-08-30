@@ -5,8 +5,12 @@ export const DAILY_REPORT_DELIVERY_STATUSES = [
   "NEVER_RUN",
   "DRY_RUN_READY",
   "QUEUED",
+  "RUNNING",
   "DELIVERED",
+  // Retained for compatibility with the source-ready control migration.
   "FAILED",
+  "FAILED_RETRYABLE",
+  "FAILED_FINAL",
   "SKIPPED",
 ] as const;
 
@@ -61,7 +65,28 @@ export type DailyReportRunRecord = {
   completedAt: Date | null;
   deliveryResult: string | null;
   error: string | null;
+  errorClass: string | null;
+  providerReceipt: string | null;
+  retryCount: number;
+  maxAttempts: number;
+  nextAttemptAt: Date | null;
+  lastAttemptAt: Date | null;
+  reportFingerprint: string | null;
+  leaseToken: string | null;
+  leaseExpiresAt: Date | null;
 };
+
+export const DAILY_REPORT_CLOUD_RUN_STATUSES = [
+  "QUEUED",
+  "RUNNING",
+  "DELIVERED",
+  "FAILED_RETRYABLE",
+  "FAILED_FINAL",
+  "SKIPPED",
+] as const;
+
+export type DailyReportCloudRunStatus =
+  (typeof DAILY_REPORT_CLOUD_RUN_STATUSES)[number];
 
 export type DailyReportCloudBoundary = {
   state: DailyReportCloudState;
