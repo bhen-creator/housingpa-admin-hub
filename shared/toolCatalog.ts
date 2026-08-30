@@ -1,6 +1,15 @@
 export type ToolCategory = "featured" | "future";
 
-export type InternalToolConfig = {
+export const TOOL_OPERATIONAL_STATES = [
+  "UNCONFIGURED",
+  "CONFIGURED_UNVERIFIED",
+  "VERIFIED_USABLE",
+  "BLOCKED",
+] as const;
+
+export type ToolOperationalState = (typeof TOOL_OPERATIONAL_STATES)[number];
+
+export type InternalToolRecord = {
   id?: number;
   slug: string;
   name: string;
@@ -9,72 +18,187 @@ export type InternalToolConfig = {
   category: ToolCategory;
   sortOrder: number;
   isActive?: boolean;
+  operationalState: ToolOperationalState;
+  verificationEvidence: string | null;
+  verifiedAt: Date | string | null;
+  blockedReason: string | null;
 };
 
-export const DEFAULT_INTERNAL_TOOLS: readonly InternalToolConfig[] = [
+export type InternalToolConfig = InternalToolRecord & {
+  canLaunch: boolean;
+};
+
+const UNCONFIGURED_STATE = {
+  operationalState: "UNCONFIGURED" as const,
+  verificationEvidence: null,
+  verifiedAt: null,
+  blockedReason: null,
+};
+
+export const DEFAULT_INTERNAL_TOOLS: readonly InternalToolRecord[] = [
   {
     slug: "quote-pilot",
     name: "QuotePilot",
-    description: "Create clear, customer-ready estimates with a faster review flow.",
+    description:
+      "Create clear, customer-ready estimates with a faster review flow.",
     destinationUrl: "",
     category: "featured",
     sortOrder: 10,
+    ...UNCONFIGURED_STATE,
   },
   {
     slug: "email-app",
-    name: "EmailApp",
-    description: "Keep day-to-day customer communication organized and actionable.",
+    name: "Email App",
+    description:
+      "Keep day-to-day customer communication organized and actionable.",
     destinationUrl: "",
     category: "featured",
     sortOrder: 20,
+    ...UNCONFIGURED_STATE,
   },
   {
     slug: "bids-ai",
-    name: "BidsAI",
-    description: "Accelerate bid preparation while preserving a consistent point of view.",
+    name: "BIDsAI",
+    description:
+      "Accelerate bid preparation while preserving a consistent point of view.",
     destinationUrl: "",
     category: "featured",
     sortOrder: 30,
+    ...UNCONFIGURED_STATE,
   },
   {
     slug: "snooz-app",
-    name: "SnoozApp",
-    description: "Set intentional reminders so critical follow-ups do not slip through.",
+    name: "Snooze",
+    description:
+      "Set intentional reminders so critical follow-ups do not slip through.",
     destinationUrl: "",
     category: "featured",
     sortOrder: 40,
+    ...UNCONFIGURED_STATE,
   },
   {
     slug: "idea-generator",
-    name: "Idea Generator",
-    description: "Turn early thoughts into practical ideas worth moving forward.",
+    name: "Daily Idea Generator",
+    description:
+      "Turn early thoughts into practical ideas worth moving forward.",
     destinationUrl: "",
     category: "featured",
     sortOrder: 50,
+    ...UNCONFIGURED_STATE,
+  },
+  {
+    slug: "prospecting-machine",
+    name: "Prospecting Machine",
+    description:
+      "Coordinate prospecting research and review without implying outreach authority.",
+    destinationUrl: "",
+    category: "featured",
+    sortOrder: 60,
+    ...UNCONFIGURED_STATE,
   },
 ];
 
 export const CORE_TOOL_SLUGS = DEFAULT_INTERNAL_TOOLS.map(tool => tool.slug);
 
-export function isCoreToolSlug(value: string): value is (typeof CORE_TOOL_SLUGS)[number] {
+export function isCoreToolSlug(value: string) {
   return CORE_TOOL_SLUGS.includes(value);
 }
 
-export function isExternalToolUrl(value: string) {
-  if (!value) return true;
+type DestinationPolicy = {
+  allowEmpty?: boolean;
+  allowLocalHttp?: boolean;
+};
+
+export function isDestinationUrl(
+  value: string,
+  { allowEmpty = true, allowLocalHttp = false }: DestinationPolicy = {}
+) {
+  const normalized = value.trim();
+  if (!normalized) return allowEmpty;
 
   try {
-    const parsed = new URL(value);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
+    const parsed = new URL(normalized);
+    if (parsed.username || parsed.password) return false;
+    if (parsed.protocol === "https:") return true;
+    if (parsed.protocol !== "http:" || !allowLocalHttp) return false;
+    return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
   } catch {
     return false;
   }
 }
 
+function hasValidVerification(
+  tool: InternalToolRecord,
+  allowLocalHttp: boolean
+) {
+  const evidence = tool.verificationEvidence?.trim();
+  const verifiedAt =
+    tool.verifiedAt instanceof Date
+      ? tool.verifiedAt
+      : tool.verifiedAt
+        ? new Date(tool.verifiedAt)
+        : null;
+
+  return Boolean(
+    tool.operationalState === "VERIFIED_USABLE" &&
+      evidence &&
+      verifiedAt &&
+      !Number.isNaN(verifiedAt.getTime()) &&
+      isDestinationUrl(tool.destinationUrl, {
+        allowEmpty: false,
+        allowLocalHttp,
+      })
+  );
+}
+
+export function normalizeInternalTool(
+  tool: InternalToolRecord,
+  { allowLocalHttp = false }: Pick<DestinationPolicy, "allowLocalHttp"> = {}
+): InternalToolConfig {
+  const destinationUrl = tool.destinationUrl.trim();
+  const destinationIsSafe = isDestinationUrl(destinationUrl, {
+    allowEmpty: true,
+    allowLocalHttp,
+  });
+
+  let operationalState = tool.operationalState;
+  let blockedReason = tool.blockedReason;
+
+  if (destinationUrl && !destinationIsSafe) {
+    operationalState = "BLOCKED";
+    blockedReason ||= "Destination does not meet the URL security policy.";
+  } else if (operationalState !== "BLOCKED" && !destinationUrl) {
+    operationalState = "UNCONFIGURED";
+  } else if (operationalState === "UNCONFIGURED" && destinationUrl) {
+    operationalState = "CONFIGURED_UNVERIFIED";
+  }
+
+  const normalized: InternalToolRecord = {
+    ...tool,
+    destinationUrl,
+    operationalState,
+    blockedReason,
+  };
+
+  if (
+    operationalState === "VERIFIED_USABLE" &&
+    !hasValidVerification(normalized, allowLocalHttp)
+  ) {
+    normalized.operationalState = "CONFIGURED_UNVERIFIED";
+  }
+
+  return {
+    ...normalized,
+    canLaunch: hasValidVerification(normalized, allowLocalHttp),
+  };
+}
+
 export function mergeInternalTools(
-  persistedTools: InternalToolConfig[],
-): InternalToolConfig[] {
-  const persistedBySlug = new Map(persistedTools.map(tool => [tool.slug, tool]));
+  persistedTools: InternalToolRecord[]
+): InternalToolRecord[] {
+  const persistedBySlug = new Map(
+    persistedTools.map(tool => [tool.slug, tool])
+  );
   const coreTools = DEFAULT_INTERNAL_TOOLS.map(defaultTool => ({
     ...defaultTool,
     ...persistedBySlug.get(defaultTool.slug),

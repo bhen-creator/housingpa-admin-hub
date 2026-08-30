@@ -19,10 +19,16 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { cn } from "@/lib/utils";
-import { Compass, Grid2X2, LogOut, PanelLeft, Settings2, ShieldCheck } from "lucide-react";
+import {
+  Compass,
+  Grid2X2,
+  LogOut,
+  PanelLeft,
+  Settings2,
+  ShieldCheck,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
@@ -41,7 +47,11 @@ const DEFAULT_WIDTH = 278;
 const MIN_WIDTH = 220;
 const MAX_WIDTH = 400;
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
@@ -79,7 +89,6 @@ function SignInScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const hasSingleSignOn = Boolean(import.meta.env.VITE_APP_ID);
 
   const submitCredentials = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -97,22 +106,66 @@ function SignInScreen() {
       <section className="relative w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.045] p-8 shadow-2xl backdrop-blur-sm sm:p-10">
         <BrandLockup />
         <div className="mt-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d9b879]">Administrator access</p>
-          <h1 className="mt-4 font-serif text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl">A considered place to work.</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#d9b879]">
+            Administrator access
+          </p>
+          <h1 className="mt-4 font-serif text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl">
+            A considered place to work.
+          </h1>
           <p className="mt-5 max-w-sm text-sm leading-6 text-white/65">
-            Sign in with your authorized HousingPA account to access the internal tool hub.
+            Sign in with your authorized HousingPA account to access the
+            internal tool hub.
           </p>
         </div>
         <form className="mt-8 space-y-4" onSubmit={submitCredentials}>
-          <div className="space-y-1.5"><Label htmlFor="admin-username" className="text-xs font-semibold text-white/70">Username</Label><Input id="admin-username" value={username} onChange={event => setUsername(event.target.value)} autoComplete="username" required className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35" /></div>
-          <div className="space-y-1.5"><Label htmlFor="admin-password" className="text-xs font-semibold text-white/70">Password</Label><Input id="admin-password" type="password" value={password} onChange={event => setPassword(event.target.value)} autoComplete="current-password" required className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35" /></div>
-          {error && <p role="alert" className="text-xs font-medium text-[#f5bf9e]">{error}</p>}
-          <Button disabled={isCredentialLoginPending} className="h-12 w-full rounded-xl bg-[#d9b879] text-sm font-semibold text-[#172528] shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition hover:bg-[#edd39e] active:scale-[0.98]">
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="admin-username"
+              className="text-xs font-semibold text-white/70"
+            >
+              Username
+            </Label>
+            <Input
+              id="admin-username"
+              value={username}
+              onChange={event => setUsername(event.target.value)}
+              autoComplete="username"
+              required
+              className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="admin-password"
+              className="text-xs font-semibold text-white/70"
+            >
+              Password
+            </Label>
+            <Input
+              id="admin-password"
+              type="password"
+              value={password}
+              onChange={event => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+              className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
+            />
+          </div>
+          {error && (
+            <p role="alert" className="text-xs font-medium text-[#f5bf9e]">
+              {error}
+            </p>
+          )}
+          <Button
+            disabled={isCredentialLoginPending}
+            className="h-12 w-full rounded-xl bg-[#d9b879] text-sm font-semibold text-[#172528] shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition hover:bg-[#edd39e] active:scale-[0.98]"
+          >
             {isCredentialLoginPending ? "Signing in…" : "Sign in securely"}
           </Button>
         </form>
-        {hasSingleSignOn && <Button type="button" variant="ghost" onClick={() => startLogin()} className="mt-2 h-10 w-full rounded-xl text-xs font-semibold text-white/60 hover:bg-white/10 hover:text-white">Use HousingPA single sign-on</Button>}
-        <p className="mt-5 text-center text-xs leading-5 text-white/40">Restricted to approved administrators.</p>
+        <p className="mt-5 text-center text-xs leading-5 text-white/40">
+          Restricted to approved administrators.
+        </p>
       </section>
     </main>
   );
@@ -127,12 +180,22 @@ function RestrictedScreen() {
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-[#cbd5cd] bg-white text-[#3f7969] shadow-sm">
           <ShieldCheck className="h-6 w-6" />
         </div>
-        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-[#4b7b6e]">Access restricted</p>
-        <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">Administrator permission required.</h1>
-        <p className="mt-4 text-sm leading-6 text-[#60706d]">
-          Your account is authenticated but does not have access to the HousingPA Admin hub. Contact a workspace administrator if this appears to be in error.
+        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-[#4b7b6e]">
+          Access restricted
         </p>
-        <Button variant="outline" onClick={logout} className="mt-8 rounded-xl border-[#b8c4bd] bg-white px-5 text-[#244740] hover:bg-[#eaf0eb]">
+        <h1 className="mt-3 font-serif text-4xl tracking-[-0.04em]">
+          Administrator permission required.
+        </h1>
+        <p className="mt-4 text-sm leading-6 text-[#60706d]">
+          Your account is authenticated but does not have access to the
+          HousingPA Admin hub. Contact a workspace administrator if this appears
+          to be in error.
+        </p>
+        <Button
+          variant="outline"
+          onClick={logout}
+          className="mt-8 rounded-xl border-[#b8c4bd] bg-white px-5 text-[#244740] hover:bg-[#eaf0eb]"
+        >
           Sign out
         </Button>
       </section>
@@ -147,8 +210,12 @@ function BrandLockup() {
         <Compass className="h-4.5 w-4.5" strokeWidth={2.25} />
       </span>
       <div>
-        <p className="font-serif text-xl leading-none tracking-[-0.04em]">housingpa</p>
-        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">Admin</p>
+        <p className="font-serif text-xl leading-none tracking-[-0.04em]">
+          housingpa
+        </p>
+        <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+          Admin
+        </p>
       </div>
     </div>
   );
@@ -168,7 +235,8 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const activeMenuItem = menuItems.find(item => item.path === location) ?? menuItems[0];
+  const activeMenuItem =
+    menuItems.find(item => item.path === location) ?? menuItems[0];
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -196,7 +264,11 @@ function DashboardLayoutContent({
   return (
     <>
       <div className="relative" ref={sidebarRef}>
-        <Sidebar collapsible="icon" className="border-r border-white/10 bg-[#102326] text-[#f8f6ef]" disableTransition={isResizing}>
+        <Sidebar
+          collapsible="icon"
+          className="border-r border-white/10 bg-[#102326] text-[#f8f6ef]"
+          disableTransition={isResizing}
+        >
           <SidebarHeader className="h-[82px] justify-center border-b border-white/10 px-4">
             <div className="flex items-center gap-3">
               <button
@@ -211,7 +283,11 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0 px-3 py-6">
-            {!isCollapsed && <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">Workspace</p>}
+            {!isCollapsed && (
+              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">
+                Workspace
+              </p>
+            )}
             <SidebarMenu className="gap-1">
               {menuItems.map(item => {
                 const isActive = item.path === location;
@@ -223,10 +299,13 @@ function DashboardLayoutContent({
                       onClick={() => setLocation(item.path)}
                       className={cn(
                         "h-11 rounded-xl px-3 text-white/65 transition hover:bg-white/[0.075] hover:text-white",
-                        isActive && "bg-[#37685d] text-white hover:bg-[#37685d]",
+                        isActive && "bg-[#37685d] text-white hover:bg-[#37685d]"
                       )}
                     >
-                      <item.icon className="h-4 w-4" strokeWidth={isActive ? 2.3 : 2} />
+                      <item.icon
+                        className="h-4 w-4"
+                        strokeWidth={isActive ? 2.3 : 2}
+                      />
                       <span className="font-medium">{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -245,13 +324,24 @@ function DashboardLayoutContent({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                    <p className="truncate text-sm font-medium text-white/90">{user?.name || "Administrator"}</p>
-                    <p className="mt-0.5 truncate text-xs text-white/42">HousingPA admin</p>
+                    <p className="truncate text-sm font-medium text-white/90">
+                      {user?.name || "Administrator"}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-white/42">
+                      HousingPA admin
+                    </p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top" className="w-48 rounded-xl">
-                <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuContent
+                align="end"
+                side="top"
+                className="w-48 rounded-xl"
+              >
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>
@@ -272,8 +362,12 @@ function DashboardLayoutContent({
           <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-[#dae0d9] bg-[#f5f4ef]/90 px-4 backdrop-blur">
             <SidebarTrigger className="h-9 w-9 rounded-xl border border-[#d4ddd5] bg-white" />
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5e9383]">HousingPA</p>
-              <p className="font-serif text-lg leading-none text-[#172528]">{activeMenuItem.label}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5e9383]">
+                HousingPA
+              </p>
+              <p className="font-serif text-lg leading-none text-[#172528]">
+                {activeMenuItem.label}
+              </p>
             </div>
           </header>
         )}

@@ -1,13 +1,18 @@
-import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
+import {
+  createHmac,
+  randomBytes,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from "node:crypto";
 import { promisify } from "node:util";
 import type { Request } from "express";
 
 const scrypt = promisify(scryptCallback) as unknown as (
   password: string,
   salt: string,
-  keyLength: number,
+  keyLength: number
 ) => Promise<Buffer>;
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
+export const SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
 
 export const LOCAL_ADMIN_COOKIE_NAME = "housingpa-admin-session";
 
@@ -28,7 +33,11 @@ function decodePasswordHash(value: string) {
 }
 
 function parseScryptHash(encoded: string) {
-  const separator = encoded.includes(":") ? ":" : encoded.includes(".") ? "." : "|";
+  const separator = encoded.includes(":")
+    ? ":"
+    : encoded.includes(".")
+      ? "."
+      : "|";
   const [salt, hash] = encoded.split(separator);
   if (!salt || !hash) return null;
   return { salt, hash: decodePasswordHash(hash) };
@@ -40,35 +49,62 @@ function signature(value: string, secret: string) {
 
 function parseCookie(request: Request, name: string) {
   const header = request.headers?.cookie ?? "";
-  const part = header.split(";").map(item => item.trim()).find(item => item.startsWith(`${name}=`));
+  const part = header
+    .split(";")
+    .map(item => item.trim())
+    .find(item => item.startsWith(`${name}=`));
   return part ? decodeURIComponent(part.slice(name.length + 1)) : null;
 }
 
-export async function verifyOwnerCredentials(username: string, password: string) {
+export async function verifyOwnerCredentials(
+  username: string,
+  password: string
+) {
   const configuredUsername = process.env.OWNER_USERNAME;
   const configuredHash = process.env.OWNER_PASSWORD_SCRYPT;
-  if (!configuredUsername || !configuredHash || username !== configuredUsername) return false;
+  if (!configuredUsername || !configuredHash || username !== configuredUsername)
+    return false;
 
   const parsed = parseScryptHash(configuredHash);
   if (!parsed) return false;
 
-  const derived = Buffer.from(await scrypt(password, parsed.salt, parsed.hash.length));
-  return derived.length === parsed.hash.length && timingSafeEqual(derived, parsed.hash);
+  const derived = Buffer.from(
+    await scrypt(password, parsed.salt, parsed.hash.length)
+  );
+  return (
+    derived.length === parsed.hash.length &&
+    timingSafeEqual(derived, parsed.hash)
+  );
 }
 
-export async function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
+export async function hashPassword(
+  password: string,
+  salt = randomBytes(16).toString("hex")
+) {
   const hash = Buffer.from(await scrypt(password, salt, 64)).toString("hex");
   return `${salt}:${hash}`;
 }
 
-export function createAdminSession(username: string, secret = getSessionSecret()) {
-  if (!secret) throw new Error("Administrator session secret is not configured.");
-  const payload: AdminSessionPayload = { username, expiresAt: Date.now() + SESSION_DURATION_MS };
+export function createAdminSession(
+  username: string,
+  secret = getSessionSecret(),
+  now = Date.now()
+) {
+  if (!secret)
+    throw new Error("Administrator session secret is not configured.");
+  const payload: AdminSessionPayload = {
+    username,
+    expiresAt: now + SESSION_DURATION_MS,
+  };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${encoded}.${signature(encoded, secret)}`;
 }
 
-export function getLocalAdminSession(request: Request, secret = getSessionSecret()) {
+export function getLocalAdminSession(
+  request: Request,
+  secret = getSessionSecret(),
+  now = Date.now()
+) {
   if (!secret) return null;
   const token = parseCookie(request, LOCAL_ADMIN_COOKIE_NAME);
   if (!token) return null;
@@ -78,11 +114,22 @@ export function getLocalAdminSession(request: Request, secret = getSessionSecret
   const expectedSignature = signature(encoded, secret);
   const expectedBuffer = Buffer.from(expectedSignature);
   const receivedBuffer = Buffer.from(receivedSignature);
-  if (expectedBuffer.length !== receivedBuffer.length || !timingSafeEqual(expectedBuffer, receivedBuffer)) return null;
+  if (
+    expectedBuffer.length !== receivedBuffer.length ||
+    !timingSafeEqual(expectedBuffer, receivedBuffer)
+  )
+    return null;
 
   try {
-    const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as AdminSessionPayload;
-    if (payload.username !== process.env.OWNER_USERNAME || payload.expiresAt < Date.now()) return null;
+    const payload = JSON.parse(
+      Buffer.from(encoded, "base64url").toString("utf8")
+    ) as AdminSessionPayload;
+    if (
+      payload.username !== process.env.OWNER_USERNAME ||
+      !Number.isFinite(payload.expiresAt) ||
+      payload.expiresAt <= now
+    )
+      return null;
     return {
       id: 0,
       openId: "coolify-local-admin",

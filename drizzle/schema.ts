@@ -1,4 +1,12 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import {
+  boolean,
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -11,7 +19,7 @@ export const users = mysqlTable("users", {
    * Use this for relations between tables.
    */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** Historical external identity field retained for schema compatibility. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -30,10 +38,25 @@ export const internalTools = mysqlTable("internalTools", {
   slug: varchar("slug", { length: 96 }).notNull().unique(),
   name: varchar("name", { length: 120 }).notNull(),
   description: text("description").notNull(),
-  destinationUrl: varchar("destinationUrl", { length: 2048 }).notNull().default(""),
-  category: mysqlEnum("category", ["featured", "future"]).notNull().default("future"),
+  destinationUrl: varchar("destinationUrl", { length: 2048 })
+    .notNull()
+    .default(""),
+  category: mysqlEnum("category", ["featured", "future"])
+    .notNull()
+    .default("future"),
   sortOrder: int("sortOrder").notNull().default(100),
   isActive: boolean("isActive").notNull().default(true),
+  operationalState: mysqlEnum("operationalState", [
+    "UNCONFIGURED",
+    "CONFIGURED_UNVERIFIED",
+    "VERIFIED_USABLE",
+    "BLOCKED",
+  ])
+    .notNull()
+    .default("UNCONFIGURED"),
+  verificationEvidence: text("verificationEvidence"),
+  verifiedAt: timestamp("verifiedAt"),
+  blockedReason: text("blockedReason"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

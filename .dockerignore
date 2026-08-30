@@ -1,0 +1,11 @@
+.git
+.github
+.manus-logs
+.env
+.env.*
+artifacts
+dist
+node_modules
+npm-debug.log*
+pnpm-debug.log*
+*.zip
