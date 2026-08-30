@@ -36,7 +36,7 @@ function tool(overrides: Partial<InternalToolRecord> = {}): InternalToolRecord {
 }
 
 describe("internal tool catalog", () => {
-  it("preserves the six required tool names", () => {
+  it("preserves the seven required card names", () => {
     expect(DEFAULT_INTERNAL_TOOLS.map(item => item.name)).toEqual([
       "QuotePilot",
       "Email App",
@@ -44,6 +44,7 @@ describe("internal tool catalog", () => {
       "Snooze",
       "Daily Idea Generator",
       "Prospecting Machine",
+      "Daily 6:00 AM Report",
     ]);
   });
 
@@ -54,6 +55,19 @@ describe("internal tool catalog", () => {
       "VERIFIED_USABLE",
       "BLOCKED",
     ]);
+  });
+
+  it("routes the daily report card internally without making it launchable", () => {
+    const report = mergeInternalTools([]).find(
+      item => item.slug === "daily-report"
+    );
+    expect(report).toMatchObject({
+      name: "Daily 6:00 AM Report",
+      internalRoute: "/settings/reports/daily",
+      destinationUrl: "",
+      operationalState: "UNCONFIGURED",
+    });
+    expect(normalizeInternalTool(report!)).toMatchObject({ canLaunch: false });
   });
 
   it("merges a configured destination without changing the core tool identity", () => {
@@ -164,12 +178,12 @@ describe("internal tool catalog", () => {
     );
   });
 
-  it("returns the six unconfigured defaults when the optional database is absent", async () => {
+  it("returns the seven unconfigured defaults when the optional database is absent", async () => {
     delete process.env.DATABASE_URL;
     delete process.env.PROSPECTING_MACHINE_URL;
     const caller = appRouter.createCaller(createUserContext("admin"));
     const tools = await caller.tools.list();
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(7);
     expect(
       tools.every(
         item => item.operationalState === "UNCONFIGURED" && !item.canLaunch

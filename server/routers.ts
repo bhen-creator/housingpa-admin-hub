@@ -1,13 +1,25 @@
 import {
   DEFAULT_INTERNAL_TOOLS,
-  isCoreToolSlug,
   isDestinationUrl,
+  isExternalCoreToolSlug,
   mergeInternalTools,
   normalizeInternalTool,
 } from "@shared/toolCatalog";
+import { isValidScheduleTime, isValidTimeZone } from "@shared/dailyReport";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { listInternalTools, upsertInternalTool } from "./db";
+import {
+  listInternalTools,
+  readDailyReportRun,
+  readDailyReportSettings,
+  recordDailyReportRun,
+  saveDailyReportSettings,
+  upsertInternalTool,
+} from "./db";
+import {
+  createDailyReportService,
+  DailyReportPersistenceUnavailableError,
+} from "./dailyReportService";
 import { systemRouter } from "./_core/systemRouter";
 import { adminAccessProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -38,6 +50,56 @@ const futureToolInput = z.object({
     "A destination URL is required."
   ),
 });
+
+const reportRecipient = z
+  .string()
+  .trim()
+  .max(320)
+  .refine(
+    value => !value || z.email().safeParse(value).success,
+    "Enter a valid email address."
+  );
+
+const dailyReportSettingsInput = z
+  .object({
+    enabled: z.boolean(),
+    scheduleTime: z
+      .string()
+      .trim()
+      .refine(isValidScheduleTime, "Use a 24-hour time such as 06:00."),
+    timezone: z
+      .string()
+      .trim()
+      .max(64)
+      .refine(isValidTimeZone, "Choose a valid IANA timezone."),
+    recipient: reportRecipient,
+  })
+  .superRefine((value, context) => {
+    if (value.enabled && !value.recipient) {
+      context.addIssue({
+        code: "custom",
+        path: ["recipient"],
+        message: "A recipient is required when the report is enabled.",
+      });
+    }
+  });
+
+const dailyReportService = createDailyReportService({
+  readSettings: readDailyReportSettings,
+  saveSettings: saveDailyReportSettings,
+  readRun: readDailyReportRun,
+  recordRun: recordDailyReportRun,
+});
+
+function reportProcedureError(error: unknown): never {
+  if (error instanceof DailyReportPersistenceUnavailableError) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: error.message,
+    });
+  }
+  throw error;
+}
 
 function createSlug(name: string) {
   const normalized = name
@@ -161,7 +223,7 @@ export const appRouter = router({
     updateDestination: adminAccessProcedure
       .input(z.object({ slug: z.string(), destinationUrl }))
       .mutation(async ({ input }) => {
-        if (!isCoreToolSlug(input.slug)) {
+        if (!isExternalCoreToolSlug(input.slug)) {
           throw new Error(
             "Only the predefined tool destinations can be updated here."
           );
@@ -202,6 +264,25 @@ export const appRouter = router({
         });
         return { success: true } as const;
       }),
+  }),
+  dailyReport: router({
+    get: adminAccessProcedure.query(() => dailyReportService.readView()),
+    save: adminAccessProcedure
+      .input(dailyReportSettingsInput)
+      .mutation(async ({ input }) => {
+        try {
+          return await dailyReportService.saveSettings(input);
+        } catch (error) {
+          reportProcedureError(error);
+        }
+      }),
+    runManualDryRun: adminAccessProcedure.mutation(async () => {
+      try {
+        return await dailyReportService.runManualDryRun();
+      } catch (error) {
+        reportProcedureError(error);
+      }
+    }),
   }),
 });
 

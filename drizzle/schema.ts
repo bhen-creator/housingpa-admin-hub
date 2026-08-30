@@ -63,3 +63,56 @@ export const internalTools = mysqlTable("internalTools", {
 
 export type InternalTool = typeof internalTools.$inferSelect;
 export type InsertInternalTool = typeof internalTools.$inferInsert;
+
+export const dailyReportSettings = mysqlTable("dailyReportSettings", {
+  id: int("id").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  scheduleTime: varchar("scheduleTime", { length: 5 })
+    .notNull()
+    .default("06:00"),
+  timezone: varchar("timezone", { length: 64 })
+    .notNull()
+    .default("America/New_York"),
+  recipient: varchar("recipient", { length: 320 }).notNull().default(""),
+  lastRunAt: timestamp("lastRunAt"),
+  latestDeliveryStatus: mysqlEnum("latestDeliveryStatus", [
+    "NEVER_RUN",
+    "DRY_RUN_READY",
+    "QUEUED",
+    "DELIVERED",
+    "FAILED",
+    "SKIPPED",
+  ])
+    .notNull()
+    .default("NEVER_RUN"),
+  latestError: text("latestError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DailyReportSettings = typeof dailyReportSettings.$inferSelect;
+export type InsertDailyReportSettings = typeof dailyReportSettings.$inferInsert;
+
+export const dailyReportRuns = mysqlTable("dailyReportRuns", {
+  id: int("id").autoincrement().primaryKey(),
+  runId: varchar("runId", { length: 64 }).notNull().unique(),
+  trigger: mysqlEnum("trigger", ["MANUAL_DRY_RUN", "SCHEDULED"]).notNull(),
+  status: mysqlEnum("status", [
+    "NEVER_RUN",
+    "DRY_RUN_READY",
+    "QUEUED",
+    "DELIVERED",
+    "FAILED",
+    "SKIPPED",
+  ]).notNull(),
+  scheduledFor: timestamp("scheduledFor"),
+  startedAt: timestamp("startedAt").notNull(),
+  completedAt: timestamp("completedAt"),
+  deliveryResult: text("deliveryResult"),
+  error: text("error"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DailyReportRun = typeof dailyReportRuns.$inferSelect;
+export type InsertDailyReportRun = typeof dailyReportRuns.$inferInsert;

@@ -22,6 +22,7 @@ import {
 import { useIsMobile } from "@/hooks/useMobile";
 import { cn } from "@/lib/utils";
 import {
+  CalendarClock,
   Compass,
   Grid2X2,
   LogOut,
@@ -40,6 +41,11 @@ import { FormEvent } from "react";
 const menuItems = [
   { icon: Grid2X2, label: "Tool hub", path: "/" },
   { icon: Settings2, label: "Tool settings", path: "/settings" },
+  {
+    icon: CalendarClock,
+    label: "Daily report",
+    path: "/settings/reports/daily",
+  },
 ];
 
 const SIDEBAR_WIDTH_KEY = "housingpa-admin-sidebar-width";

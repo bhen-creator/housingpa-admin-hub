@@ -3,9 +3,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import type { InternalToolConfig } from "@shared/toolCatalog";
+import { DAILY_REPORT_TOOL_SLUG } from "@shared/dailyReport";
 import {
+  ArrowRight,
   ArrowUpRight,
   Bot,
+  CalendarClock,
   Compass,
   Lightbulb,
   Mail,
@@ -25,6 +28,7 @@ const ICONS: Record<string, typeof Compass> = {
   "snooz-app": TimerReset,
   "idea-generator": Lightbulb,
   "prospecting-machine": SearchCheck,
+  [DAILY_REPORT_TOOL_SLUG]: CalendarClock,
 };
 
 const ACCENTS: Record<string, string> = {
@@ -34,6 +38,7 @@ const ACCENTS: Record<string, string> = {
   "snooz-app": "bg-[#efe6f3] text-[#73516e]",
   "idea-generator": "bg-[#f7f0cf] text-[#8a6e1c]",
   "prospecting-machine": "bg-[#e2ecec] text-[#365f63]",
+  [DAILY_REPORT_TOOL_SLUG]: "bg-[#f1e5dc] text-[#7b5141]",
 };
 
 const STATUS_PRESENTATION: Record<
@@ -41,22 +46,22 @@ const STATUS_PRESENTATION: Record<
   { label: string; action: string; tone: string }
 > = {
   UNCONFIGURED: {
-    label: "Needs setup",
+    label: "Not Ready Yet",
     action: "Configure destination",
     tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
   },
   CONFIGURED_UNVERIFIED: {
-    label: "Pending verification",
+    label: "Needs Testing",
     action: "Verification required",
     tone: "border-[#e7d8b6] bg-[#fff9e9] text-[#86682d]",
   },
   VERIFIED_USABLE: {
-    label: "Verified",
+    label: "Working",
     action: "Open workspace",
     tone: "border-[#c7ddd2] bg-[#eef7f2] text-[#306b59]",
   },
   BLOCKED: {
-    label: "Blocked",
+    label: "Repairing",
     action: "Review blocker",
     tone: "border-[#e5c9c4] bg-[#fff3f1] text-[#914d43]",
   },
@@ -71,16 +76,23 @@ function ToolCard({
 }) {
   const Icon = ICONS[tool.slug] ?? Wrench;
   const isReady = tool.canLaunch;
-  const status = STATUS_PRESENTATION[tool.operationalState];
+  const isInternalControl = Boolean(tool.internalRoute);
+  const status = isInternalControl
+    ? {
+        label: "Not Ready Yet",
+        action: "Open report settings",
+        tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
+      }
+    : STATUS_PRESENTATION[tool.operationalState];
   const accent = ACCENTS[tool.slug] ?? "bg-[#dceee6] text-[#265b4e]";
 
   const cardContent = (
     <Card
       className={cn(
         "group h-full overflow-hidden rounded-[1.5rem] border-[#dbe2da] bg-white shadow-[0_1px_0_rgba(20,45,40,0.04)] transition duration-200",
-        isReady &&
+        (isReady || isInternalControl) &&
           "hover:-translate-y-1 hover:border-[#afcbbd] hover:shadow-[0_18px_36px_rgba(27,55,47,0.10)]",
-        !isReady && "bg-white/75"
+        !isReady && !isInternalControl && "bg-white/75"
       )}
       style={{ animationDelay: `${index * 55}ms` }}
     >
@@ -94,7 +106,7 @@ function ToolCard({
           >
             <Icon className="h-5 w-5" strokeWidth={2} />
           </span>
-          {isReady ? (
+          {isReady || isInternalControl ? (
             <div className="flex items-center gap-2">
               <span
                 className={cn(
@@ -105,7 +117,11 @@ function ToolCard({
                 {status.label}
               </span>
               <span className="grid h-9 w-9 place-items-center rounded-full border border-[#d8e1d9] text-[#346a5a] transition group-hover:border-[#346a5a] group-hover:bg-[#346a5a] group-hover:text-white">
-                <ArrowUpRight className="h-4 w-4" />
+                {isInternalControl ? (
+                  <ArrowRight className="h-4 w-4" />
+                ) : (
+                  <ArrowUpRight className="h-4 w-4" />
+                )}
               </span>
             </div>
           ) : (
@@ -129,7 +145,7 @@ function ToolCard({
           <p
             className={cn(
               "mt-5 text-xs font-semibold",
-              isReady ? "text-[#3a7564]" : "text-[#9a7e57]"
+              isReady || isInternalControl ? "text-[#3a7564]" : "text-[#9a7e57]"
             )}
           >
             {status.action}
@@ -139,7 +155,15 @@ function ToolCard({
     </Card>
   );
 
-  return isReady ? (
+  return isInternalControl ? (
+    <Link
+      href={tool.internalRoute!}
+      className="block h-full"
+      aria-label={`Open ${tool.name} settings`}
+    >
+      {cardContent}
+    </Link>
+  ) : isReady ? (
     <a
       href={tool.destinationUrl}
       target="_blank"
@@ -163,7 +187,7 @@ function ToolCard({
 function ToolGridSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, index) => (
+      {Array.from({ length: 7 }).map((_, index) => (
         <Skeleton
           key={index}
           className="h-[230px] rounded-[1.5rem] bg-[#e7ebe5]"

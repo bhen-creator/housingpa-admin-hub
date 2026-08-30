@@ -1,3 +1,5 @@
+import { DAILY_REPORT_TOOL_SLUG } from "./dailyReport";
+
 export type ToolCategory = "featured" | "future";
 
 export const TOOL_OPERATIONAL_STATES = [
@@ -15,6 +17,7 @@ export type InternalToolRecord = {
   name: string;
   description: string;
   destinationUrl: string;
+  internalRoute?: string;
   category: ToolCategory;
   sortOrder: number;
   isActive?: boolean;
@@ -96,12 +99,27 @@ export const DEFAULT_INTERNAL_TOOLS: readonly InternalToolRecord[] = [
     sortOrder: 60,
     ...UNCONFIGURED_STATE,
   },
+  {
+    slug: DAILY_REPORT_TOOL_SLUG,
+    name: "Daily 6:00 AM Report",
+    description:
+      "Review report timing, delivery readiness, and the latest durable run status.",
+    destinationUrl: "",
+    internalRoute: "/settings/reports/daily",
+    category: "featured",
+    sortOrder: 70,
+    ...UNCONFIGURED_STATE,
+  },
 ];
 
 export const CORE_TOOL_SLUGS = DEFAULT_INTERNAL_TOOLS.map(tool => tool.slug);
 
 export function isCoreToolSlug(value: string) {
   return CORE_TOOL_SLUGS.includes(value);
+}
+
+export function isExternalCoreToolSlug(value: string) {
+  return isCoreToolSlug(value) && value !== DAILY_REPORT_TOOL_SLUG;
 }
 
 type DestinationPolicy = {

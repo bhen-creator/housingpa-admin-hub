@@ -12,7 +12,7 @@ Secret values belong in the deployment provider's protected environment configur
 
 ## Core destinations
 
-The six core destination variables are:
+The six external core destination variables are:
 
 - `QPILOT_URL`
 - `EMAIL_APP_URL`
@@ -34,9 +34,15 @@ Tool records use four states: `UNCONFIGURED`, `CONFIGURED_UNVERIFIED`, `VERIFIED
 
 Changing a destination clears prior verification. This hardening pass intentionally does not add a public or administrator-facing route that can self-promote a URL to verified.
 
+## Daily report control
+
+The seventh core card is an authenticated internal control at `/settings/reports/daily`. It does not accept an external destination URL. Its settings and durable dry-run records require migration `0003_black_morgan_stark.sql`.
+
+No cloud scheduler or mail-delivery adapter is configured by this source package. The page must continue to show cloud scheduling and delivery as inactive until a separately authorized worker is deployed and independently verified. See `docs/DAILY_REPORT_CONTROL.md`.
+
 ## Database and operations
 
-`DATABASE_URL` is optional for reading the default catalog and required for saving tool records. Apply the checked-in migration through a separately authorized deployment workflow before using the new state fields in production.
+`DATABASE_URL` is optional for reading the default catalog and required for saving tool or report records. Apply the checked-in migrations through a separately authorized deployment workflow before using the new fields in production.
 
 - Liveness: `/healthz`
 - Readiness: `/readyz`

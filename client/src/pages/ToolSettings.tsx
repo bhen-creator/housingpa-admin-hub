@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import type { InternalToolConfig } from "@shared/toolCatalog";
+import { DAILY_REPORT_TOOL_SLUG } from "@shared/dailyReport";
 import { Check, Link2, Plus, Save, Settings2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -189,7 +190,7 @@ export default function ToolSettings() {
     refetchOnWindowFocus: false,
   });
   const featuredTools = (toolQuery.data ?? []).filter(
-    tool => tool.category === "featured"
+    tool => tool.category === "featured" && tool.slug !== DAILY_REPORT_TOOL_SLUG
   );
 
   return (

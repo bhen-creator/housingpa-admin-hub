@@ -6,6 +6,7 @@ import DashboardLayout from "./components/DashboardLayout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import DailyReportSettings from "./pages/DailyReportSettings";
 import ToolSettings from "./pages/ToolSettings";
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/settings" component={ToolSettings} />
+        <Route path="/settings/reports/daily" component={DailyReportSettings} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
