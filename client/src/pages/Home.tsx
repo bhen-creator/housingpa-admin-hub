@@ -67,6 +67,37 @@ const STATUS_PRESENTATION: Record<
   },
 };
 
+const PUBLIC_STATUS_PRESENTATION: Record<
+  string,
+  { label: string; action: string; tone: string }
+> = {
+  "quote-pilot": {
+    label: "Live route",
+    action: "Open verified app",
+    tone: "border-[#c7ddd2] bg-[#eef7f2] text-[#306b59]",
+  },
+  "bids-ai": {
+    label: "Pilot only",
+    action: "Open pilot app",
+    tone: "border-[#e7d8b6] bg-[#fff9e9] text-[#86682d]",
+  },
+  "email-app": {
+    label: "Preparing",
+    action: "Source gate",
+    tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
+  },
+  "snooz-app": {
+    label: "Source gate",
+    action: "Repackage pending",
+    tone: "border-[#e7d8b6] bg-[#fff9e9] text-[#86682d]",
+  },
+  "idea-generator": {
+    label: "Source gate",
+    action: "Asset repair pending",
+    tone: "border-[#e7d8b6] bg-[#fff9e9] text-[#86682d]",
+  },
+};
+
 type HubToolCard = PublicToolCard &
   Partial<Pick<InternalToolConfig, "internalRoute" | "destinationUrl">>;
 
@@ -82,59 +113,64 @@ function ToolCard({
   const Icon = ICONS[tool.slug] ?? Wrench;
   const isReady = tool.canLaunch;
   const isInternalControl = Boolean(tool.internalRoute);
-  const status = isInternalControl
-    ? {
-        label: "Not Ready Yet",
-        action: "Open report settings",
-        tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
-      }
-    : STATUS_PRESENTATION[tool.operationalState];
-  const action = publicReadOnly ? "Read-only status" : status.action;
+  const publicLaunchUrl = publicReadOnly ? tool.publicLaunchUrl : undefined;
+  const canPublicLaunch = Boolean(publicLaunchUrl);
+  const status =
+    (publicReadOnly && PUBLIC_STATUS_PRESENTATION[tool.slug]) ||
+    (isInternalControl
+      ? {
+          label: "Not Ready Yet",
+          action: "Open report settings",
+          tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
+        }
+      : STATUS_PRESENTATION[tool.operationalState]);
+  const action = status.action;
   const accent = ACCENTS[tool.slug] ?? "bg-[#dceee6] text-[#265b4e]";
+  const isInteractive =
+    canPublicLaunch || (!publicReadOnly && (isReady || isInternalControl));
 
   const cardContent = (
     <Card
       className={cn(
         "group h-full overflow-hidden rounded-[1.5rem] border-[#dbe2da] bg-white shadow-[0_1px_0_rgba(20,45,40,0.04)] transition duration-200",
-        !publicReadOnly &&
-          (isReady || isInternalControl) &&
+        isInteractive &&
           "hover:-translate-y-1 hover:border-[#afcbbd] hover:shadow-[0_18px_36px_rgba(27,55,47,0.10)]",
-        !isReady && !isInternalControl && "bg-white/75"
+        !isInteractive && "bg-white/75"
       )}
       style={{ animationDelay: `${index * 55}ms` }}
     >
-      <CardContent className="flex h-full min-h-[230px] flex-col p-6">
-        <div className="flex items-start justify-between gap-4">
+      <CardContent className="flex h-full min-h-[132px] flex-col p-3 sm:min-h-[144px] sm:p-4">
+        <div className="flex items-start justify-between gap-2">
           <span
             className={cn(
-              "grid h-12 w-12 place-items-center rounded-2xl",
+              "grid h-9 w-9 place-items-center rounded-xl sm:h-10 sm:w-10",
               accent
             )}
           >
-            <Icon className="h-5 w-5" strokeWidth={2} />
+            <Icon className="h-4 w-4" strokeWidth={2} />
           </span>
-          {!publicReadOnly && (isReady || isInternalControl) ? (
+          {isInteractive ? (
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em]",
+                  "rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] sm:text-[9px]",
                   status.tone
                 )}
               >
                 {status.label}
               </span>
-              <span className="grid h-9 w-9 place-items-center rounded-full border border-[#d8e1d9] text-[#346a5a] transition group-hover:border-[#346a5a] group-hover:bg-[#346a5a] group-hover:text-white">
+              <span className="grid h-7 w-7 place-items-center rounded-full border border-[#d8e1d9] text-[#346a5a] transition group-hover:border-[#346a5a] group-hover:bg-[#346a5a] group-hover:text-white sm:h-8 sm:w-8">
                 {isInternalControl ? (
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 ) : (
-                  <ArrowUpRight className="h-4 w-4" />
+                  <ArrowUpRight className="h-3.5 w-3.5" />
                 )}
               </span>
             </div>
           ) : (
             <span
               className={cn(
-                "rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em]",
+                "rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] sm:text-[9px]",
                 status.tone
               )}
             >
@@ -142,17 +178,17 @@ function ToolCard({
             </span>
           )}
         </div>
-        <div className="mt-auto pt-7">
-          <h2 className="text-xl font-semibold tracking-[-0.03em] text-[#1c302e]">
+        <div className="mt-auto pt-3 sm:pt-4">
+          <h2 className="text-sm font-semibold tracking-[-0.025em] text-[#1c302e] sm:text-base">
             {tool.name}
           </h2>
-          <p className="mt-2 text-sm leading-6 text-[#687975]">
+          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[#687975] sm:text-xs">
             {tool.description}
           </p>
           <p
             className={cn(
-              "mt-5 text-xs font-semibold",
-              !publicReadOnly && (isReady || isInternalControl)
+              "mt-2 text-[10px] font-semibold",
+              isInteractive
                 ? "text-[#3a7564]"
                 : "text-[#9a7e57]"
             )}
@@ -165,6 +201,20 @@ function ToolCard({
   );
 
   if (publicReadOnly) {
+    if (publicLaunchUrl) {
+      return (
+        <a
+          href={publicLaunchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block h-full"
+          aria-label={`Open ${tool.name} in a new tab`}
+        >
+          {cardContent}
+        </a>
+      );
+    }
+
     return <div className="block h-full">{cardContent}</div>;
   }
 
@@ -199,11 +249,11 @@ function ToolCard({
 
 function ToolGridSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 sm:gap-3">
       {Array.from({ length: 7 }).map((_, index) => (
         <Skeleton
           key={index}
-          className="h-[230px] rounded-[1.5rem] bg-[#e7ebe5]"
+          className="h-[132px] rounded-[1.25rem] bg-[#e7ebe5] sm:h-[144px]"
         />
       ))}
     </div>
@@ -227,9 +277,9 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
   const futureTools = tools.filter(tool => tool.category === "future");
 
   return (
-    <div className="min-h-screen bg-[#f5f4ef] px-5 py-8 sm:px-8 lg:px-12 lg:py-11">
+    <div className="min-h-screen bg-[#f5f4ef] px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
       <div className="mx-auto max-w-7xl">
-        <header className="flex flex-col justify-between gap-6 border-b border-[#d9e0d8] pb-8 md:flex-row md:items-end">
+        <header className="flex flex-col justify-between gap-3 border-b border-[#d9e0d8] pb-4 md:flex-row md:items-end">
           <div>
             <div className="flex items-center gap-2 text-[#4d8977]">
               <span className="h-px w-7 bg-current" />
@@ -237,10 +287,10 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
                 HousingPA · {publicReadOnly ? "overview" : "internal"}
               </p>
             </div>
-            <h1 className="mt-4 font-serif text-4xl tracking-[-0.045em] text-[#172b29] sm:text-5xl">
+            <h1 className="mt-2 font-serif text-2xl tracking-[-0.045em] text-[#172b29] sm:text-3xl">
               Admin tool hub
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#63736f] sm:text-base">
+            <p className="mt-1 max-w-2xl text-xs leading-4 text-[#63736f] sm:text-sm sm:leading-5">
               A quiet, focused starting point for the work that moves HousingPA
               forward.
             </p>
@@ -256,15 +306,15 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
           )}
         </header>
 
-        <section className="pt-8" aria-labelledby="core-tools-heading">
-          <div className="mb-5 flex items-end justify-between gap-4">
+        <section className="pt-4" aria-labelledby="core-tools-heading">
+          <div className="mb-3 flex items-end justify-between gap-4">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5a8d7d]">
                 Operational status
               </p>
               <h2
                 id="core-tools-heading"
-                className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-[#203633]"
+                className="mt-1 text-base font-semibold tracking-[-0.03em] text-[#203633] sm:text-lg"
               >
                 Core applications
               </h2>
@@ -289,7 +339,7 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
               </p>
             </Card>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 sm:gap-3">
               {featuredTools.map((tool, index) => (
                 <ToolCard
                   key={tool.slug}

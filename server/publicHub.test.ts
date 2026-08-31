@@ -38,6 +38,10 @@ describe("public read-only Hub", () => {
       slug: "quote-pilot",
       name: "QuotePilot",
       category: "featured",
+      publicLaunchUrl: "https://housingpa.com/repair/",
+    });
+    expect(cards.find(card => card.slug === "bids-ai")).toMatchObject({
+      publicLaunchUrl: "https://bysania.com/apps/bidsai/",
     });
     for (const card of cards) {
       expect(card).not.toHaveProperty("destinationUrl");
@@ -45,6 +49,10 @@ describe("public read-only Hub", () => {
       expect(card).not.toHaveProperty("verificationEvidence");
       expect(card).not.toHaveProperty("verifiedAt");
       expect(card).not.toHaveProperty("blockedReason");
+
+      if (!["quote-pilot", "bids-ai"].includes(card.slug)) {
+        expect(card).not.toHaveProperty("publicLaunchUrl");
+      }
     }
   });
 

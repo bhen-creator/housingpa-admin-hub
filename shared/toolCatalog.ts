@@ -33,8 +33,10 @@ export type InternalToolConfig = InternalToolRecord & {
 
 /**
  * The only card data that may be returned to the public read-only Hub.
- * It intentionally excludes destinations, internal routes, evidence, and
- * blocker details so the Hub cannot become an index of internal services.
+ * It intentionally excludes generic destinations, internal routes, evidence,
+ * and blocker details so the Hub cannot become an index of internal services.
+ * The optional publicLaunchUrl is a narrowly allowlisted, independently
+ * verified public route; it is never derived from runtime configuration.
  */
 export type PublicToolCard = Pick<
   InternalToolConfig,
@@ -45,7 +47,25 @@ export type PublicToolCard = Pick<
   | "sortOrder"
   | "operationalState"
   | "canLaunch"
->;
+> & {
+  publicLaunchUrl?: string;
+};
+
+/**
+ * Public Hub navigation is deliberately limited to routes independently
+ * verified as public applications. Do not add a route here merely because a
+ * tool has a configured destination: re-verify the exact public URL first.
+ */
+export const PUBLIC_LIVE_TOOL_ROUTES = {
+  "quote-pilot": "https://housingpa.com/repair/",
+  "bids-ai": "https://bysania.com/apps/bidsai/",
+} as const;
+
+export function getPublicLiveToolRoute(slug: string) {
+  return PUBLIC_LIVE_TOOL_ROUTES[
+    slug as keyof typeof PUBLIC_LIVE_TOOL_ROUTES
+  ];
+}
 
 const UNCONFIGURED_STATE = {
   operationalState: "UNCONFIGURED" as const,
@@ -257,6 +277,8 @@ export function toPublicToolCard(tool: InternalToolConfig): PublicToolCard {
     throw new Error("Only canonical core tools can be published.");
   }
 
+  const publicLaunchUrl = getPublicLiveToolRoute(canonicalTool.slug);
+
   return {
     slug: canonicalTool.slug,
     name: canonicalTool.name,
@@ -265,5 +287,6 @@ export function toPublicToolCard(tool: InternalToolConfig): PublicToolCard {
     sortOrder: canonicalTool.sortOrder,
     operationalState: tool.operationalState,
     canLaunch: tool.canLaunch,
+    ...(publicLaunchUrl ? { publicLaunchUrl } : {}),
   };
 }

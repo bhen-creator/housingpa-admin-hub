@@ -12,7 +12,9 @@ Secret values belong in the deployment provider's protected environment configur
 
 ## Public read-only Hub
 
-`PUBLIC_READ_ONLY_HUB` is optional and defaults to disabled. Set its runtime value to exactly `true` only when the dashboard must be viewable without a login. This mode exposes a fixed, sanitized core-card status catalogue only: no destinations, internal routes, future tools, verification evidence, blocker details, settings, add/edit controls, or write actions. All existing APIs that change data, trigger notifications, or manage tool destinations remain administrator-only.
+`PUBLIC_READ_ONLY_HUB` is optional and defaults to disabled. Set its runtime value to exactly `true` only when the dashboard must be viewable without a login. This mode exposes a fixed, sanitized core-card status catalogue only: no generic destinations, internal routes, future tools, verification evidence, blocker details, settings, add/edit controls, or write actions. All existing APIs that change data, trigger notifications, or manage tool destinations remain administrator-only.
+
+The public Hub has two deliberately narrow, source-controlled click-through exceptions: QuotePilot opens `https://housingpa.com/repair/` and BIDsAI opens `https://bysania.com/apps/bidsai/`. These exact public routes were independently verified before being allowlisted; they are not copied from runtime destination variables. All other cards remain display-only in public mode. The BIDsAI link remains a synthetic/pilot route and does not authorize live bid activity.
 
 To roll back, set `PUBLIC_READ_ONLY_HUB` to `false` (or remove it) and restart/redeploy the existing service. Do not log or add an administrator secret while changing this flag.
 
