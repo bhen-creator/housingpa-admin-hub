@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
+import {
+  DEFAULT_INTERNAL_TOOLS,
+  getPublicLiveToolRoute,
+  toPublicToolCard,
+} from "@shared/toolCatalog";
 import type { TrpcContext } from "./_core/context";
 import { appRouter } from "./routers";
 
@@ -63,5 +68,50 @@ describe("public read-only Hub", () => {
     await expect(caller.tools.list()).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+  });
+
+  it("keeps the Idea Generator non-clickable until its canonical public destination is verified", () => {
+    const ideaGenerator = DEFAULT_INTERNAL_TOOLS.find(
+      tool => tool.slug === "idea-generator"
+    );
+    expect(ideaGenerator).toBeDefined();
+
+    expect(getPublicLiveToolRoute("idea-generator")).toBeUndefined();
+    expect(
+      getPublicLiveToolRoute(
+        "idea-generator",
+        "https://housingpa.com/ideamachine"
+      )
+    ).toBe("https://housingpa.com/ideamachine/");
+    expect(
+      getPublicLiveToolRoute(
+        "idea-generator",
+        "https://housingpa.com/other"
+      )
+    ).toBeUndefined();
+
+    const unverifiedCard = toPublicToolCard({
+      ...ideaGenerator!,
+      destinationUrl: "https://housingpa.com/ideamachine",
+      operationalState: "CONFIGURED_UNVERIFIED",
+      verificationEvidence: null,
+      verifiedAt: null,
+      blockedReason: null,
+      canLaunch: false,
+    });
+    expect(unverifiedCard).not.toHaveProperty("publicLaunchUrl");
+
+    const verifiedCard = toPublicToolCard({
+      ...ideaGenerator!,
+      destinationUrl: "https://housingpa.com/ideamachine",
+      operationalState: "VERIFIED_USABLE",
+      verificationEvidence: "Independent production route check.",
+      verifiedAt: new Date("2026-08-31T12:00:00.000Z"),
+      blockedReason: null,
+      canLaunch: true,
+    });
+    expect(verifiedCard.publicLaunchUrl).toBe(
+      "https://housingpa.com/ideamachine/"
+    );
   });
 });

@@ -59,12 +59,54 @@ export type PublicToolCard = Pick<
 export const PUBLIC_LIVE_TOOL_ROUTES = {
   "quote-pilot": "https://housingpa.com/repair/",
   "bids-ai": "https://bysania.com/apps/bidsai/",
+  // The Idea Generator uses a fixed public route, but is kept non-clickable
+  // until the provider has recorded a verified canonical destination.
+  "idea-generator": "https://housingpa.com/ideamachine/",
 } as const;
 
-export function getPublicLiveToolRoute(slug: string) {
-  return PUBLIC_LIVE_TOOL_ROUTES[
-    slug as keyof typeof PUBLIC_LIVE_TOOL_ROUTES
-  ];
+const PUBLIC_ROUTE_REQUIRING_CANONICAL_VERIFICATION = new Set([
+  "idea-generator",
+]);
+
+function hasCanonicalPublicDestination(expectedRoute: string, value?: string) {
+  if (!value) return false;
+
+  try {
+    const expected = new URL(expectedRoute);
+    const actual = new URL(value);
+    const expectedPath = expected.pathname.replace(/\/+$/, "") || "/";
+    const actualPath = actual.pathname.replace(/\/+$/, "") || "/";
+
+    return (
+      actual.protocol === expected.protocol &&
+      actual.host === expected.host &&
+      actualPath === expectedPath &&
+      !actual.search &&
+      !actual.hash
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function getPublicLiveToolRoute(
+  slug: string,
+  verifiedDestinationUrl?: string
+) {
+  const route =
+    PUBLIC_LIVE_TOOL_ROUTES[
+      slug as keyof typeof PUBLIC_LIVE_TOOL_ROUTES
+    ];
+
+  if (!route) return undefined;
+  if (
+    PUBLIC_ROUTE_REQUIRING_CANONICAL_VERIFICATION.has(slug) &&
+    !hasCanonicalPublicDestination(route, verifiedDestinationUrl)
+  ) {
+    return undefined;
+  }
+
+  return route;
 }
 
 const UNCONFIGURED_STATE = {
@@ -277,7 +319,10 @@ export function toPublicToolCard(tool: InternalToolConfig): PublicToolCard {
     throw new Error("Only canonical core tools can be published.");
   }
 
-  const publicLaunchUrl = getPublicLiveToolRoute(canonicalTool.slug);
+  const publicLaunchUrl = getPublicLiveToolRoute(
+    canonicalTool.slug,
+    tool.canLaunch ? tool.destinationUrl : undefined
+  );
 
   return {
     slug: canonicalTool.slug,

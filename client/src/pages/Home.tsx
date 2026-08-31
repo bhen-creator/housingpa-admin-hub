@@ -116,7 +116,16 @@ function ToolCard({
   const isInternalControl = Boolean(tool.internalRoute);
   const publicLaunchUrl = publicReadOnly ? tool.publicLaunchUrl : undefined;
   const canPublicLaunch = Boolean(publicLaunchUrl);
+  const verifiedPublicStatus =
+    publicReadOnly && tool.slug === "idea-generator" && canPublicLaunch
+      ? {
+          label: "Live route",
+          action: "Open verified app",
+          tone: "border-[#c7ddd2] bg-[#eef7f2] text-[#306b59] dark:border-[#315b50] dark:bg-[#19352f] dark:text-[#a8d5c5]",
+        }
+      : undefined;
   const status =
+    verifiedPublicStatus ||
     (publicReadOnly && PUBLIC_STATUS_PRESENTATION[tool.slug]) ||
     (isInternalControl
       ? {
