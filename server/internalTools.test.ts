@@ -209,6 +209,25 @@ describe("internal tool catalog", () => {
     }
   });
 
+  it("does not use legacy environment configuration to publish the fixed Daily Idea Generator route", async () => {
+    delete process.env.DATABASE_URL;
+    process.env.IDEA_GENERATOR_URL =
+      "https://example.test/not-the-idea-generator";
+    try {
+      const caller = appRouter.createCaller(createUserContext("admin"));
+      const ideaGenerator = (await caller.tools.list()).find(
+        item => item.slug === "idea-generator"
+      );
+      expect(ideaGenerator).toMatchObject({
+        destinationUrl: "",
+        operationalState: "UNCONFIGURED",
+        canLaunch: false,
+      });
+    } finally {
+      delete process.env.IDEA_GENERATOR_URL;
+    }
+  });
+
   it("refuses tool directory access for non-administrators", async () => {
     const caller = appRouter.createCaller(createUserContext("user"));
     await expect(caller.tools.list()).rejects.toMatchObject({

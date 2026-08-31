@@ -56,12 +56,15 @@ export type PublicToolCard = Pick<
  * verified as public applications. Do not add a route here merely because a
  * tool has a configured destination: re-verify the exact public URL first.
  */
+export const DAILY_IDEA_GENERATOR_PUBLIC_ROUTE =
+  "https://housingpa.com/ideamachine/";
+
 export const PUBLIC_LIVE_TOOL_ROUTES = {
   "quote-pilot": "https://housingpa.com/repair/",
   "bids-ai": "https://bysania.com/apps/bidsai/",
   // The Idea Generator uses a fixed public route, but is kept non-clickable
   // until the provider has recorded a verified canonical destination.
-  "idea-generator": "https://housingpa.com/ideamachine/",
+  "idea-generator": DAILY_IDEA_GENERATOR_PUBLIC_ROUTE,
 } as const;
 
 const PUBLIC_ROUTE_REQUIRING_CANONICAL_VERIFICATION = new Set([
@@ -94,9 +97,7 @@ export function getPublicLiveToolRoute(
   verifiedDestinationUrl?: string
 ) {
   const route =
-    PUBLIC_LIVE_TOOL_ROUTES[
-      slug as keyof typeof PUBLIC_LIVE_TOOL_ROUTES
-    ];
+    PUBLIC_LIVE_TOOL_ROUTES[slug as keyof typeof PUBLIC_LIVE_TOOL_ROUTES];
 
   if (!route) return undefined;
   if (

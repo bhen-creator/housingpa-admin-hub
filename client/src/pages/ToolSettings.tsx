@@ -5,11 +5,79 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import type { InternalToolConfig } from "@shared/toolCatalog";
+import {
+  DAILY_IDEA_GENERATOR_PUBLIC_ROUTE,
+  type InternalToolConfig,
+} from "@shared/toolCatalog";
 import { DAILY_REPORT_TOOL_SLUG } from "@shared/dailyReport";
 import { Check, Link2, Plus, Save, Settings2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+function DailyIdeaGeneratorVerificationRow({
+  tool,
+}: {
+  tool: InternalToolConfig;
+}) {
+  const utils = trpc.useUtils();
+  const mutation = trpc.tools.verifyDailyIdeaGenerator.useMutation({
+    onSuccess: async data => {
+      await Promise.all([
+        utils.tools.list.invalidate(),
+        utils.publicHub.list.invalidate(),
+      ]);
+      toast.success("Daily Idea Generator verified and published.");
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  const verifiedAt = tool.verifiedAt
+    ? new Date(tool.verifiedAt).toLocaleString()
+    : null;
+
+  return (
+    <div className="grid gap-4 border-b border-[#e0e5de] py-6 last:border-b-0 md:grid-cols-[minmax(180px,0.75fr)_minmax(280px,1.75fr)_auto] md:items-center">
+      <div>
+        <p className="font-semibold tracking-[-0.02em] text-[#213633]">
+          {tool.name}
+        </p>
+        <p className="mt-1 text-xs leading-5 text-[#788680]">
+          {tool.description}
+        </p>
+        <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#628176]">
+          {tool.operationalState.replaceAll("_", " ")}
+        </p>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-[#213633]">Canonical route</p>
+        <p className="mt-1 break-all rounded-xl border border-[#cfdad0] bg-[#fbfcfa] px-3 py-2.5 font-mono text-xs text-[#4f625c]">
+          {DAILY_IDEA_GENERATOR_PUBLIC_ROUTE}
+        </p>
+        <p className="mt-1.5 text-xs leading-5 text-[#7d785e]">
+          This is the only route this control can publish. The server checks the
+          application and its ready health endpoint before storing verified
+          status.
+          {verifiedAt ? ` Last verified ${verifiedAt}.` : ""}
+        </p>
+      </div>
+      <Button
+        type="button"
+        disabled={mutation.isPending}
+        onClick={() => mutation.mutate()}
+        className="h-11 rounded-xl bg-[#2e6658] px-4 text-white hover:bg-[#245548] active:scale-[0.98]"
+      >
+        {mutation.isPending ? (
+          "Checking route…"
+        ) : (
+          <>
+            <Check className="mr-2 h-4 w-4" />
+            Verify & publish
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}
 
 function DestinationRow({ tool }: { tool: InternalToolConfig }) {
   const utils = trpc.useUtils();
@@ -241,9 +309,16 @@ export default function ToolSettings() {
                   try again.
                 </p>
               ) : (
-                featuredTools.map(tool => (
-                  <DestinationRow key={tool.slug} tool={tool} />
-                ))
+                featuredTools.map(tool =>
+                  tool.slug === "idea-generator" ? (
+                    <DailyIdeaGeneratorVerificationRow
+                      key={tool.slug}
+                      tool={tool}
+                    />
+                  ) : (
+                    <DestinationRow key={tool.slug} tool={tool} />
+                  )
+                )
               )}
             </CardContent>
           </Card>

@@ -21,6 +21,10 @@ import {
   createDailyReportService,
   DailyReportPersistenceUnavailableError,
 } from "./dailyReportService";
+import {
+  DailyIdeaGeneratorVerificationError,
+  verifyDailyIdeaGenerator,
+} from "./dailyIdeaGeneratorVerification";
 import { systemRouter } from "./_core/systemRouter";
 import { adminAccessProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -118,7 +122,10 @@ function environmentDestinations() {
     "email-app": process.env.EMAIL_APP_URL ?? "",
     "bids-ai": process.env.BIDSAI_URL ?? "",
     "snooz-app": process.env.SNOOZE_URL ?? "",
-    "idea-generator": process.env.IDEA_GENERATOR_URL ?? "",
+    // The Daily Idea Generator can only be made launchable by the dedicated
+    // server-side verification procedure below. Do not allow environment or
+    // editable runtime values to make it look published.
+    "idea-generator": "",
     "prospecting-machine": process.env.PROSPECTING_MACHINE_URL ?? "",
   };
 }
@@ -243,6 +250,13 @@ export const appRouter = router({
     updateDestination: adminAccessProcedure
       .input(z.object({ slug: z.string(), destinationUrl }))
       .mutation(async ({ input }) => {
+        if (input.slug === "idea-generator") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "The Daily Idea Generator uses a fixed canonical route. Use its dedicated verification control.",
+          });
+        }
         if (!isExternalCoreToolSlug(input.slug)) {
           throw new Error(
             "Only the predefined tool destinations can be updated here."
@@ -265,6 +279,52 @@ export const appRouter = router({
           blockedReason: null,
         });
         return { success: true } as const;
+      }),
+    verifyDailyIdeaGenerator: adminAccessProcedure
+      .input(z.void())
+      .mutation(async () => {
+        let verification;
+        try {
+          verification = await verifyDailyIdeaGenerator();
+        } catch (error) {
+          if (error instanceof DailyIdeaGeneratorVerificationError) {
+            throw new TRPCError({
+              code: "PRECONDITION_FAILED",
+              message: error.message,
+            });
+          }
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "The Daily Idea Generator could not be verified. Nothing was published.",
+          });
+        }
+
+        const tool = DEFAULT_INTERNAL_TOOLS.find(
+          item => item.slug === "idea-generator"
+        );
+        if (!tool) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "The Daily Idea Generator configuration was not found.",
+          });
+        }
+
+        await upsertInternalTool({
+          ...tool,
+          destinationUrl: verification.destinationUrl,
+          operationalState: "VERIFIED_USABLE",
+          verificationEvidence: verification.evidence,
+          verifiedAt: verification.verifiedAt,
+          blockedReason: null,
+        });
+
+        return {
+          success: true as const,
+          destinationUrl: verification.destinationUrl,
+          operationalState: "VERIFIED_USABLE" as const,
+          verifiedAt: verification.verifiedAt,
+        };
       }),
     addFutureTool: adminAccessProcedure
       .input(futureToolInput)
