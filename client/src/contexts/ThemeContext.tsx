@@ -1,10 +1,16 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  automaticThemeForEasternTime,
+  resolveTheme,
+  toggledTheme,
+  type Theme,
+} from "@/lib/themeMode";
 
-type Theme = "light" | "dark";
+const SESSION_THEME_OVERRIDE_KEY = "housingpa-admin-theme-override";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
@@ -12,22 +18,41 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  defaultTheme?: Theme;
   switchable?: boolean;
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
-  switchable = false,
+  switchable = true,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+  const [sessionOverride, setSessionOverride] = useState<Theme | null>(() => {
+    if (!switchable || typeof window === "undefined") return null;
+
+    try {
+      const stored = window.sessionStorage.getItem(SESSION_THEME_OVERRIDE_KEY);
+      return stored === "light" || stored === "dark" ? stored : null;
+    } catch {
+      return null;
     }
-    return defaultTheme;
   });
+  const [theme, setTheme] = useState<Theme>(() =>
+    resolveTheme(new Date(), sessionOverride)
+  );
+
+  useEffect(() => {
+    if (sessionOverride) {
+      setTheme(sessionOverride);
+      return;
+    }
+
+    const syncAutomaticTheme = () => {
+      setTheme(automaticThemeForEasternTime());
+    };
+
+    syncAutomaticTheme();
+    const intervalId = window.setInterval(syncAutomaticTheme, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [sessionOverride]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -37,16 +62,21 @@ export function ThemeProvider({
       root.classList.remove("dark");
     }
 
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, switchable]);
+  }, [theme]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  const toggleTheme = () => {
+    if (!switchable) return;
+
+    const nextTheme = toggledTheme(theme);
+    setTheme(nextTheme);
+    setSessionOverride(nextTheme);
+    try {
+      window.sessionStorage.setItem(SESSION_THEME_OVERRIDE_KEY, nextTheme);
+    } catch {
+      // A private browser policy may prevent session storage; the in-memory
+      // override still applies until this page is closed.
+    }
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>

@@ -81,13 +81,13 @@ export default function DashboardLayout({
   }
 
   if (publicReadOnly) {
-    return <main className="min-h-screen bg-[#f5f4ef]">{children}</main>;
+    return <main className="min-h-screen bg-[#f5f4ef] dark:bg-[#101a1c]">{children}</main>;
   }
 
   return (
     <SidebarProvider
       style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}
-      className="min-h-screen bg-[#f5f4ef]"
+      className="min-h-screen bg-[#f5f4ef] dark:bg-[#101a1c]"
     >
       <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
         {children}
@@ -369,15 +369,15 @@ function DashboardLayoutContent({
         )}
       </div>
 
-      <SidebarInset className="min-w-0 bg-[#f5f4ef]">
+      <SidebarInset className="min-w-0 bg-[#f5f4ef] dark:bg-[#101a1c]">
         {isMobile && (
-          <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-[#dae0d9] bg-[#f5f4ef]/90 px-4 backdrop-blur">
-            <SidebarTrigger className="h-9 w-9 rounded-xl border border-[#d4ddd5] bg-white" />
+          <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-[#dae0d9] bg-[#f5f4ef]/90 px-4 backdrop-blur dark:border-[#2d4846] dark:bg-[#101a1c]/90">
+            <SidebarTrigger className="h-9 w-9 rounded-xl border border-[#d4ddd5] bg-white dark:border-[#42615c] dark:bg-[#18302f] dark:text-[#d5eee5]" />
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5e9383]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5e9383] dark:text-[#93c7b7]">
                 HousingPA
               </p>
-              <p className="font-serif text-lg leading-none text-[#172528]">
+              <p className="font-serif text-lg leading-none text-[#172528] dark:text-[#edf7f3]">
                 {activeMenuItem.label}
               </p>
             </div>
