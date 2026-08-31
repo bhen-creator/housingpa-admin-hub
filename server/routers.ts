@@ -4,6 +4,7 @@ import {
   isExternalCoreToolSlug,
   mergeInternalTools,
   normalizeInternalTool,
+  toPublicToolCard,
 } from "@shared/toolCatalog";
 import { isValidScheduleTime, isValidTimeZone } from "@shared/dailyReport";
 import { TRPCError } from "@trpc/server";
@@ -29,6 +30,7 @@ import {
   verifyOwnerCredentials,
 } from "./localAdminAuth";
 import { auditLoginFailure, loginThrottle } from "./loginThrottle";
+import { isPublicReadOnlyHubEnabled } from "./publicReadOnlyHub";
 
 export const LOCAL_AUTH_ERROR_MESSAGE = "Authentication failed.";
 const allowLocalHttp = process.env.NODE_ENV !== "production";
@@ -213,6 +215,24 @@ export const appRouter = router({
       return {
         success: true,
       } as const;
+    }),
+  }),
+  publicHub: router({
+    mode: publicProcedure.query(() => ({
+      enabled: isPublicReadOnlyHubEnabled(),
+    })),
+    list: publicProcedure.query(async () => {
+      if (!isPublicReadOnlyHubEnabled()) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Public Hub view is disabled.",
+        });
+      }
+
+      const persistedTools = await listInternalTools();
+      return configuredToolDirectory(persistedTools)
+        .filter(tool => tool.category === "featured")
+        .map(toPublicToolCard);
     }),
   }),
   tools: router({

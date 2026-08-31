@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
-import type { InternalToolConfig } from "@shared/toolCatalog";
+import type { InternalToolConfig, PublicToolCard } from "@shared/toolCatalog";
 import { DAILY_REPORT_TOOL_SLUG } from "@shared/dailyReport";
 import {
   ArrowRight,
@@ -42,7 +42,7 @@ const ACCENTS: Record<string, string> = {
 };
 
 const STATUS_PRESENTATION: Record<
-  InternalToolConfig["operationalState"],
+  PublicToolCard["operationalState"],
   { label: string; action: string; tone: string }
 > = {
   UNCONFIGURED: {
@@ -67,12 +67,17 @@ const STATUS_PRESENTATION: Record<
   },
 };
 
+type HubToolCard = PublicToolCard &
+  Partial<Pick<InternalToolConfig, "internalRoute" | "destinationUrl">>;
+
 function ToolCard({
   tool,
   index,
+  publicReadOnly,
 }: {
-  tool: InternalToolConfig;
+  tool: HubToolCard;
   index: number;
+  publicReadOnly: boolean;
 }) {
   const Icon = ICONS[tool.slug] ?? Wrench;
   const isReady = tool.canLaunch;
@@ -84,13 +89,15 @@ function ToolCard({
         tone: "border-[#e1ddd2] bg-[#faf8f3] text-[#8c7657]",
       }
     : STATUS_PRESENTATION[tool.operationalState];
+  const action = publicReadOnly ? "Read-only status" : status.action;
   const accent = ACCENTS[tool.slug] ?? "bg-[#dceee6] text-[#265b4e]";
 
   const cardContent = (
     <Card
       className={cn(
         "group h-full overflow-hidden rounded-[1.5rem] border-[#dbe2da] bg-white shadow-[0_1px_0_rgba(20,45,40,0.04)] transition duration-200",
-        (isReady || isInternalControl) &&
+        !publicReadOnly &&
+          (isReady || isInternalControl) &&
           "hover:-translate-y-1 hover:border-[#afcbbd] hover:shadow-[0_18px_36px_rgba(27,55,47,0.10)]",
         !isReady && !isInternalControl && "bg-white/75"
       )}
@@ -106,7 +113,7 @@ function ToolCard({
           >
             <Icon className="h-5 w-5" strokeWidth={2} />
           </span>
-          {isReady || isInternalControl ? (
+          {!publicReadOnly && (isReady || isInternalControl) ? (
             <div className="flex items-center gap-2">
               <span
                 className={cn(
@@ -145,15 +152,21 @@ function ToolCard({
           <p
             className={cn(
               "mt-5 text-xs font-semibold",
-              isReady || isInternalControl ? "text-[#3a7564]" : "text-[#9a7e57]"
+              !publicReadOnly && (isReady || isInternalControl)
+                ? "text-[#3a7564]"
+                : "text-[#9a7e57]"
             )}
           >
-            {status.action}
+            {action}
           </p>
         </div>
       </CardContent>
     </Card>
   );
+
+  if (publicReadOnly) {
+    return <div className="block h-full">{cardContent}</div>;
+  }
 
   return isInternalControl ? (
     <Link
@@ -165,7 +178,7 @@ function ToolCard({
     </Link>
   ) : isReady ? (
     <a
-      href={tool.destinationUrl}
+      href={tool.destinationUrl!}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Open ${tool.name} in a new tab`}
@@ -197,11 +210,18 @@ function ToolGridSkeleton() {
   );
 }
 
-export default function Home() {
-  const toolQuery = trpc.tools.list.useQuery(undefined, {
+export default function Home({ publicReadOnly = false }: { publicReadOnly?: boolean }) {
+  const privateToolQuery = trpc.tools.list.useQuery(undefined, {
+    enabled: !publicReadOnly,
     retry: false,
     refetchOnWindowFocus: false,
   });
+  const publicToolQuery = trpc.publicHub.list.useQuery(undefined, {
+    enabled: publicReadOnly,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const toolQuery = publicReadOnly ? publicToolQuery : privateToolQuery;
   const tools = toolQuery.data ?? [];
   const featuredTools = tools.filter(tool => tool.category === "featured");
   const futureTools = tools.filter(tool => tool.category === "future");
@@ -214,7 +234,7 @@ export default function Home() {
             <div className="flex items-center gap-2 text-[#4d8977]">
               <span className="h-px w-7 bg-current" />
               <p className="text-[11px] font-bold uppercase tracking-[0.18em]">
-                HousingPA · internal
+                HousingPA · {publicReadOnly ? "overview" : "internal"}
               </p>
             </div>
             <h1 className="mt-4 font-serif text-4xl tracking-[-0.045em] text-[#172b29] sm:text-5xl">
@@ -225,13 +245,15 @@ export default function Home() {
               forward.
             </p>
           </div>
-          <Link
-            href="/settings"
-            className="inline-flex items-center gap-2 self-start rounded-xl border border-[#c9d7cc] bg-white px-4 py-2.5 text-sm font-semibold text-[#275c4e] shadow-sm transition hover:border-[#9db9a7] hover:bg-[#eef4ee] md:self-auto"
-          >
-            <Wrench className="h-4 w-4" />
-            Manage tools
-          </Link>
+          {!publicReadOnly && (
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-2 self-start rounded-xl border border-[#c9d7cc] bg-white px-4 py-2.5 text-sm font-semibold text-[#275c4e] shadow-sm transition hover:border-[#9db9a7] hover:bg-[#eef4ee] md:self-auto"
+            >
+              <Wrench className="h-4 w-4" />
+              Manage tools
+            </Link>
+          )}
         </header>
 
         <section className="pt-8" aria-labelledby="core-tools-heading">
@@ -269,13 +291,18 @@ export default function Home() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {featuredTools.map((tool, index) => (
-                <ToolCard key={tool.slug} tool={tool} index={index} />
+                <ToolCard
+                  key={tool.slug}
+                  tool={tool}
+                  index={index}
+                  publicReadOnly={publicReadOnly}
+                />
               ))}
             </div>
           )}
         </section>
 
-        <section
+        {!publicReadOnly && <section
           className="mt-12 rounded-[1.75rem] border border-[#d7e2d9] bg-[#ebf0e9] p-6 sm:p-8"
           aria-labelledby="future-tools-heading"
         >
@@ -310,11 +337,16 @@ export default function Home() {
           {futureTools.length > 0 && (
             <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {futureTools.map((tool, index) => (
-                <ToolCard key={tool.slug} tool={tool} index={index} />
+                <ToolCard
+                  key={tool.slug}
+                  tool={tool}
+                  index={index}
+                  publicReadOnly={false}
+                />
               ))}
             </div>
           )}
-        </section>
+        </section>}
       </div>
     </div>
   );

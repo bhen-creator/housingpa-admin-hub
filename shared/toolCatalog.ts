@@ -31,6 +31,22 @@ export type InternalToolConfig = InternalToolRecord & {
   canLaunch: boolean;
 };
 
+/**
+ * The only card data that may be returned to the public read-only Hub.
+ * It intentionally excludes destinations, internal routes, evidence, and
+ * blocker details so the Hub cannot become an index of internal services.
+ */
+export type PublicToolCard = Pick<
+  InternalToolConfig,
+  | "slug"
+  | "name"
+  | "description"
+  | "category"
+  | "sortOrder"
+  | "operationalState"
+  | "canLaunch"
+>;
+
 const UNCONFIGURED_STATE = {
   operationalState: "UNCONFIGURED" as const,
   verificationEvidence: null,
@@ -230,4 +246,24 @@ export function mergeInternalTools(
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
 
   return [...coreTools, ...futureTools];
+}
+
+export function toPublicToolCard(tool: InternalToolConfig): PublicToolCard {
+  const canonicalTool = DEFAULT_INTERNAL_TOOLS.find(
+    item => item.slug === tool.slug
+  );
+
+  if (!canonicalTool) {
+    throw new Error("Only canonical core tools can be published.");
+  }
+
+  return {
+    slug: canonicalTool.slug,
+    name: canonicalTool.name,
+    description: canonicalTool.description,
+    category: "featured",
+    sortOrder: canonicalTool.sortOrder,
+    operationalState: tool.operationalState,
+    canLaunch: tool.canLaunch,
+  };
 }

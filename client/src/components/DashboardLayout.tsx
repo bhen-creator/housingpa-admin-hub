@@ -55,27 +55,33 @@ const MAX_WIDTH = 400;
 
 export default function DashboardLayout({
   children,
+  publicReadOnly = false,
 }: {
   children: React.ReactNode;
+  publicReadOnly?: boolean;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user } = useAuth({ enabled: !publicReadOnly });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
-  if (loading) return <DashboardLayoutSkeleton />;
+  if (!publicReadOnly && loading) return <DashboardLayoutSkeleton />;
 
-  if (!user) {
+  if (!publicReadOnly && !user) {
     return <SignInScreen />;
   }
 
-  if (user.role !== "admin") {
+  if (!publicReadOnly && user?.role !== "admin") {
     return <RestrictedScreen />;
+  }
+
+  if (publicReadOnly) {
+    return <main className="min-h-screen bg-[#f5f4ef]">{children}</main>;
   }
 
   return (

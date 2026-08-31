@@ -2,9 +2,14 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useMemo } from "react";
 
-export function useAuth() {
+type UseAuthOptions = {
+  enabled?: boolean;
+};
+
+export function useAuth({ enabled = true }: UseAuthOptions = {}) {
   const utils = trpc.useUtils();
   const meQuery = trpc.auth.me.useQuery(undefined, {
+    enabled,
     retry: false,
     refetchOnWindowFocus: false,
   });

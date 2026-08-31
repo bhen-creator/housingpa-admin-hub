@@ -10,6 +10,12 @@ The production service requires these secret-target names:
 
 Secret values belong in the deployment provider's protected environment configuration. They must not be committed, logged, or included in evidence packages.
 
+## Public read-only Hub
+
+`PUBLIC_READ_ONLY_HUB` is optional and defaults to disabled. Set its runtime value to exactly `true` only when the dashboard must be viewable without a login. This mode exposes a fixed, sanitized core-card status catalogue only: no destinations, internal routes, future tools, verification evidence, blocker details, settings, add/edit controls, or write actions. All existing APIs that change data, trigger notifications, or manage tool destinations remain administrator-only.
+
+To roll back, set `PUBLIC_READ_ONLY_HUB` to `false` (or remove it) and restart/redeploy the existing service. Do not log or add an administrator secret while changing this flag.
+
 ## Core destinations
 
 The six external core destination variables are:
