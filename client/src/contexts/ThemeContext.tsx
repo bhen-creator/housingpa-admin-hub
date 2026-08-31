@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   automaticThemeForEasternTime,
+  millisecondsUntilNextMinute,
+  readSessionThemeOverride,
   resolveTheme,
   toggledTheme,
   type Theme,
+  writeSessionThemeOverride,
 } from "@/lib/themeMode";
-
-const SESSION_THEME_OVERRIDE_KEY = "housingpa-admin-theme-override";
 
 interface ThemeContextType {
   theme: Theme;
@@ -27,13 +28,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [sessionOverride, setSessionOverride] = useState<Theme | null>(() => {
     if (!switchable || typeof window === "undefined") return null;
-
-    try {
-      const stored = window.sessionStorage.getItem(SESSION_THEME_OVERRIDE_KEY);
-      return stored === "light" || stored === "dark" ? stored : null;
-    } catch {
-      return null;
-    }
+    return readSessionThemeOverride(window.sessionStorage);
   });
   const [theme, setTheme] = useState<Theme>(() =>
     resolveTheme(new Date(), sessionOverride)
@@ -50,8 +45,23 @@ export function ThemeProvider({
     };
 
     syncAutomaticTheme();
-    const intervalId = window.setInterval(syncAutomaticTheme, 60_000);
-    return () => window.clearInterval(intervalId);
+    let timeoutId: number | undefined;
+    const scheduleNextSync = () => {
+      timeoutId = window.setTimeout(() => {
+        syncAutomaticTheme();
+        scheduleNextSync();
+      }, millisecondsUntilNextMinute());
+    };
+    const syncWhenVisible = () => {
+      if (!document.hidden) syncAutomaticTheme();
+    };
+
+    scheduleNextSync();
+    document.addEventListener("visibilitychange", syncWhenVisible);
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
+    };
   }, [sessionOverride]);
 
   useEffect(() => {
@@ -70,12 +80,7 @@ export function ThemeProvider({
     const nextTheme = toggledTheme(theme);
     setTheme(nextTheme);
     setSessionOverride(nextTheme);
-    try {
-      window.sessionStorage.setItem(SESSION_THEME_OVERRIDE_KEY, nextTheme);
-    } catch {
-      // A private browser policy may prevent session storage; the in-memory
-      // override still applies until this page is closed.
-    }
+    writeSessionThemeOverride(window.sessionStorage, nextTheme);
   };
 
   return (
