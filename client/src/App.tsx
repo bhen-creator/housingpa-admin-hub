@@ -8,6 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import DailyReportSettings from "./pages/DailyReportSettings";
 import ToolSettings from "./pages/ToolSettings";
+import ToolWorkspace from "./pages/ToolWorkspace";
 import { trpc } from "./lib/trpc";
 import { DashboardLayoutSkeleton } from "./components/DashboardLayoutSkeleton";
 
@@ -25,6 +26,9 @@ function Router() {
     <DashboardLayout publicReadOnly={publicReadOnly}>
       <Switch>
         <Route path="/">{() => <Home publicReadOnly={publicReadOnly} />}</Route>
+        <Route path="/workspaces/:slug">
+          {params => <ToolWorkspace slug={params.slug} />}
+        </Route>
         {publicReadOnly ? (
           <>
             <Route path="/settings">

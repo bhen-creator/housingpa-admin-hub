@@ -1,0 +1,168 @@
+﻿{
+  "desktop": {
+    "width": 1440,
+    "height": 1100,
+    "links": [
+      {
+        "label": "Open QuotePilot in a new tab",
+        "href": "https://housingpa.com/repair/"
+      },
+      {
+        "label": "Open Email App status workspace",
+        "href": "/workspaces/email-app"
+      },
+      {
+        "label": "Open BIDsAI in a new tab",
+        "href": "https://bysania.com/apps/bidsai/"
+      },
+      {
+        "label": "Open Snooze status workspace",
+        "href": "/workspaces/snooz-app"
+      },
+      {
+        "label": "Open Daily Idea Generator in a new tab",
+        "href": "https://housingpa.com/ideamachine/"
+      },
+      {
+        "label": "Open Prospecting Machine status workspace",
+        "href": "/workspaces/prospecting-machine"
+      },
+      {
+        "label": "Open Daily 6:00 AM Report status workspace",
+        "href": "/workspaces/daily-report"
+      }
+    ],
+    "checks": [
+      {
+        "name": "QuotePilot",
+        "href": "https://housingpa.com/repair/",
+        "found": true
+      },
+      {
+        "name": "Email App",
+        "href": "/workspaces/email-app",
+        "found": true
+      },
+      {
+        "name": "BIDsAI",
+        "href": "https://bysania.com/apps/bidsai/",
+        "found": true
+      },
+      {
+        "name": "Snooze",
+        "href": "/workspaces/snooz-app",
+        "found": true
+      },
+      {
+        "name": "Daily Idea Generator",
+        "href": "https://housingpa.com/ideamachine/",
+        "found": true
+      },
+      {
+        "name": "Prospecting Machine",
+        "href": "/workspaces/prospecting-machine",
+        "found": true
+      },
+      {
+        "name": "Daily 6:00 AM Report",
+        "href": "/workspaces/daily-report",
+        "found": true
+      }
+    ],
+    "screenshotPath": "docs/evidence/admin-candidate-desktop.png"
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "links": [
+      {
+        "label": "Open QuotePilot in a new tab",
+        "href": "https://housingpa.com/repair/"
+      },
+      {
+        "label": "Open Email App status workspace",
+        "href": "/workspaces/email-app"
+      },
+      {
+        "label": "Open BIDsAI in a new tab",
+        "href": "https://bysania.com/apps/bidsai/"
+      },
+      {
+        "label": "Open Snooze status workspace",
+        "href": "/workspaces/snooz-app"
+      },
+      {
+        "label": "Open Daily Idea Generator in a new tab",
+        "href": "https://housingpa.com/ideamachine/"
+      },
+      {
+        "label": "Open Prospecting Machine status workspace",
+        "href": "/workspaces/prospecting-machine"
+      },
+      {
+        "label": "Open Daily 6:00 AM Report status workspace",
+        "href": "/workspaces/daily-report"
+      }
+    ],
+    "checks": [
+      {
+        "name": "QuotePilot",
+        "href": "https://housingpa.com/repair/",
+        "found": true
+      },
+      {
+        "name": "Email App",
+        "href": "/workspaces/email-app",
+        "found": true
+      },
+      {
+        "name": "BIDsAI",
+        "href": "https://bysania.com/apps/bidsai/",
+        "found": true
+      },
+      {
+        "name": "Snooze",
+        "href": "/workspaces/snooz-app",
+        "found": true
+      },
+      {
+        "name": "Daily Idea Generator",
+        "href": "https://housingpa.com/ideamachine/",
+        "found": true
+      },
+      {
+        "name": "Prospecting Machine",
+        "href": "/workspaces/prospecting-machine",
+        "found": true
+      },
+      {
+        "name": "Daily 6:00 AM Report",
+        "href": "/workspaces/daily-report",
+        "found": true
+      }
+    ],
+    "screenshotPath": "docs/evidence/admin-candidate-mobile.png"
+  },
+  "internalRoutes": [
+    {
+      "url": "/workspaces/email-app",
+      "title": "Email App",
+      "passed": true
+    },
+    {
+      "url": "/workspaces/snooz-app",
+      "title": "Snooze",
+      "passed": true
+    },
+    {
+      "url": "/workspaces/prospecting-machine",
+      "title": "Prospecting Machine",
+      "passed": true
+    },
+    {
+      "url": "/workspaces/daily-report",
+      "title": "Daily 6:00 AM Report",
+      "passed": true
+    }
+  ]
+}

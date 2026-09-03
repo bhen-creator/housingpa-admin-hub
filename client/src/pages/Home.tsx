@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { getPublicCardDestination } from "@/lib/toolWorkspaces";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import type { InternalToolConfig, PublicToolCard } from "@shared/toolCatalog";
@@ -115,17 +116,31 @@ function ToolCard({
   const isReady = tool.canLaunch;
   const isInternalControl = Boolean(tool.internalRoute);
   const publicLaunchUrl = publicReadOnly ? tool.publicLaunchUrl : undefined;
-  const canPublicLaunch = Boolean(publicLaunchUrl);
+  const publicDestination = publicReadOnly
+    ? getPublicCardDestination(tool.slug, publicLaunchUrl)
+    : undefined;
+  const canPublicLaunch = Boolean(publicDestination);
   const verifiedPublicStatus =
-    publicReadOnly && tool.slug === "idea-generator" && canPublicLaunch
+    publicReadOnly &&
+    publicDestination?.kind === "external" &&
+    tool.slug === "idea-generator"
       ? {
           label: "Live route",
           action: "Open verified app",
           tone: "border-[#c7ddd2] bg-[#eef7f2] text-[#306b59] dark:border-[#315b50] dark:bg-[#19352f] dark:text-[#a8d5c5]",
         }
       : undefined;
+  const workspaceStatus =
+    publicReadOnly && publicDestination?.kind === "workspace"
+      ? {
+          label: "First version",
+          action: "Open status workspace",
+          tone: "border-[#d5d9e8] bg-[#f4f5fb] text-[#53628c] dark:border-[#3e4c6a] dark:bg-[#202a40] dark:text-[#b9c8ef]",
+        }
+      : undefined;
   const status =
     verifiedPublicStatus ||
+    workspaceStatus ||
     (publicReadOnly && PUBLIC_STATUS_PRESENTATION[tool.slug]) ||
     (isInternalControl
       ? {
@@ -170,7 +185,7 @@ function ToolCard({
                 {status.label}
               </span>
               <span className="grid h-7 w-7 place-items-center rounded-full border border-[#d8e1d9] text-[#346a5a] transition group-hover:border-[#346a5a] group-hover:bg-[#346a5a] group-hover:text-white dark:border-[#3e5f5d] dark:text-[#9dc8ba] dark:group-hover:border-[#87bbaa] dark:group-hover:bg-[#315f55] sm:h-8 sm:w-8">
-                {isInternalControl ? (
+                {isInternalControl || publicDestination?.kind === "workspace" ? (
                   <ArrowRight className="h-3.5 w-3.5" />
                 ) : (
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -211,10 +226,10 @@ function ToolCard({
   );
 
   if (publicReadOnly) {
-    if (publicLaunchUrl) {
+    if (publicDestination?.kind === "external") {
       return (
         <a
-          href={publicLaunchUrl}
+          href={publicDestination.href}
           target="_blank"
           rel="noopener noreferrer"
           className="block h-full"
@@ -222,6 +237,18 @@ function ToolCard({
         >
           {cardContent}
         </a>
+      );
+    }
+
+    if (publicDestination?.kind === "workspace") {
+      return (
+        <Link
+          href={publicDestination.href}
+          className="block h-full"
+          aria-label={`Open ${tool.name} status workspace`}
+        >
+          {cardContent}
+        </Link>
       );
     }
 
@@ -285,6 +312,20 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
   const tools = toolQuery.data ?? [];
   const featuredTools = tools.filter(tool => tool.category === "featured");
   const futureTools = tools.filter(tool => tool.category === "future");
+  const publicDestinations = publicReadOnly
+    ? featuredTools.map(tool =>
+        getPublicCardDestination(
+          tool.slug,
+          "publicLaunchUrl" in tool ? tool.publicLaunchUrl : undefined
+        )
+      )
+    : [];
+  const publicLiveCount = publicDestinations.filter(
+    destination => destination?.kind === "external"
+  ).length;
+  const publicWorkspaceCount = publicDestinations.filter(
+    destination => destination?.kind === "workspace"
+  ).length;
 
   return (
     <div className="min-h-screen bg-[#f5f4ef] px-3 py-4 transition-colors dark:bg-[#101a1c] sm:px-6 sm:py-6 lg:px-8 lg:py-7">
@@ -334,8 +375,16 @@ export default function Home({ publicReadOnly = false }: { publicReadOnly?: bool
             </div>
             {!toolQuery.isLoading && (
               <p className="text-xs font-medium text-[#778681] dark:text-[#a5b9b1]">
-                {featuredTools.filter(tool => tool.canLaunch).length} of{" "}
-                {featuredTools.length} verified usable
+                {publicReadOnly ? (
+                  <>
+                    {publicLiveCount} live routes · {publicWorkspaceCount} first-version workspaces
+                  </>
+                ) : (
+                  <>
+                    {featuredTools.filter(tool => tool.canLaunch).length} of{" "}
+                    {featuredTools.length} verified usable
+                  </>
+                )}
               </p>
             )}
           </div>
