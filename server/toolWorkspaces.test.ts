@@ -24,7 +24,7 @@ describe("public Admin Hub card destinations", () => {
     }
   });
 
-  it("keeps the three verified application routes external", () => {
+  it("keeps verified apps and approved static status pages externally addressable", () => {
     expect(getPublicCardDestination("quote-pilot")).toEqual({
       kind: "external",
       href: "https://housingpa.com/repair/",
@@ -37,15 +37,18 @@ describe("public Admin Hub card destinations", () => {
       kind: "external",
       href: "https://housingpa.com/ideamachine/",
     });
+    expect(getPublicCardDestination("prospecting-machine")).toEqual({
+      kind: "external",
+      href: "/prospecting-status.html",
+    });
+    expect(getPublicCardDestination("daily-report")).toEqual({
+      kind: "external",
+      href: "/daily-report-status.html",
+    });
   });
 
-  it("uses isolated status workspaces for apps without verified deployments", () => {
-    for (const slug of [
-      "email-app",
-      "snooz-app",
-      "prospecting-machine",
-      "daily-report",
-    ]) {
+  it("uses isolated status workspaces for remaining apps without verified deployments", () => {
+    for (const slug of ["email-app", "snooz-app"]) {
       expect(getPublicCardDestination(slug)).toEqual({
         kind: "workspace",
         href: `/workspaces/${slug}`,

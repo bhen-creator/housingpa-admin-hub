@@ -37,12 +37,12 @@ export const PUBLIC_CARD_DESTINATIONS: Readonly<
     href: "https://housingpa.com/ideamachine/",
   },
   "prospecting-machine": {
-    kind: "workspace",
-    href: "/workspaces/prospecting-machine",
+    kind: "external",
+    href: "/prospecting-status.html",
   },
   "daily-report": {
-    kind: "workspace",
-    href: "/workspaces/daily-report",
+    kind: "external",
+    href: "/daily-report-status.html",
   },
 };
 

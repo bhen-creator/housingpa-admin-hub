@@ -98,6 +98,16 @@ const PUBLIC_STATUS_PRESENTATION: Record<
     action: "Asset repair pending",
     tone: "border-[#e7d8b6] bg-[#fff9e9] text-[#86682d] dark:border-[#665633] dark:bg-[#352f1f] dark:text-[#e5c474]",
   },
+  "prospecting-machine": {
+    label: "Read-only status",
+    action: "Open status snapshot",
+    tone: "border-[#d5d9e8] bg-[#f4f5fb] text-[#53628c] dark:border-[#3e4c6a] dark:bg-[#202a40] dark:text-[#b9c8ef]",
+  },
+  "daily-report": {
+    label: "Read-only status",
+    action: "Open readiness snapshot",
+    tone: "border-[#d5d9e8] bg-[#f4f5fb] text-[#53628c] dark:border-[#3e4c6a] dark:bg-[#202a40] dark:text-[#b9c8ef]",
+  },
 };
 
 type HubToolCard = PublicToolCard &
