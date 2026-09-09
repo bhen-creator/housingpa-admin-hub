@@ -44,6 +44,10 @@ export const PUBLIC_CARD_DESTINATIONS: Readonly<
     kind: "external",
     href: "/daily-report-status.html",
   },
+  "board-minutes": {
+    kind: "external",
+    href: "https://housingpa.com/minutes/",
+  },
 };
 
 export const TOOL_WORKSPACES: Readonly<

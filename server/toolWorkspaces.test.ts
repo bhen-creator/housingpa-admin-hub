@@ -14,6 +14,7 @@ const CORE_SLUGS = [
   "idea-generator",
   "prospecting-machine",
   "daily-report",
+  "board-minutes",
 ];
 
 describe("public Admin Hub card destinations", () => {
@@ -44,6 +45,10 @@ describe("public Admin Hub card destinations", () => {
     expect(getPublicCardDestination("daily-report")).toEqual({
       kind: "external",
       href: "/daily-report-status.html",
+    });
+    expect(getPublicCardDestination("board-minutes")).toEqual({
+      kind: "external",
+      href: "https://housingpa.com/minutes/",
     });
   });
 

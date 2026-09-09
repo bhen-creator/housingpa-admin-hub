@@ -62,6 +62,7 @@ export const DAILY_IDEA_GENERATOR_PUBLIC_ROUTE =
 export const PUBLIC_LIVE_TOOL_ROUTES = {
   "quote-pilot": "https://housingpa.com/repair/",
   "bids-ai": "https://bysania.com/apps/bidsai/",
+  "board-minutes": "https://housingpa.com/minutes/",
   // The Idea Generator uses a fixed public route, but is kept non-clickable
   // until the provider has recorded a verified canonical destination.
   "idea-generator": DAILY_IDEA_GENERATOR_PUBLIC_ROUTE,
@@ -187,6 +188,16 @@ export const DEFAULT_INTERNAL_TOOLS: readonly InternalToolRecord[] = [
     internalRoute: "/settings/reports/daily",
     category: "featured",
     sortOrder: 70,
+    ...UNCONFIGURED_STATE,
+  },
+  {
+    slug: "board-minutes",
+    name: "Board Meeting Minutes",
+    description:
+      "Record, review, export, and share community association board minutes.",
+    destinationUrl: "",
+    category: "featured",
+    sortOrder: 80,
     ...UNCONFIGURED_STATE,
   },
 ];
