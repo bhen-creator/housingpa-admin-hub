@@ -6,6 +6,7 @@ import {
 } from "./db";
 import { hashPassword } from "./localAdminAuth";
 import { ADMIN_ACCOUNT } from "./adminAccount";
+import { sendResetViaZoho, ZOHO_RESET_REQUIRED_ENV } from "./adminResetZoho";
 
 export { ADMIN_ACCOUNT } from "./adminAccount";
 export const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -24,20 +25,21 @@ const REQUIRED_SMTP_ENV = [
 ] as const;
 
 export function passwordResetConfiguration(environment = process.env) {
-  const missing = REQUIRED_SMTP_ENV.filter(name => !environment[name]?.trim());
+  const zoho = environment.ADMIN_RESET_TRANSPORT === "zoho-api";
+  const required = zoho ? [...ZOHO_RESET_REQUIRED_ENV, "ADMIN_RESET_BASE_URL", "DATABASE_URL"] : REQUIRED_SMTP_ENV;
+  const missing = required.filter(name => !environment[name]?.trim());
   const baseUrl = environment.ADMIN_RESET_BASE_URL?.trim() ?? "";
   const port = Number(environment.ADMIN_RESET_SMTP_PORT);
   const secureValue = environment.ADMIN_RESET_SMTP_SECURE;
   const valid =
     missing.length === 0 &&
     environment.OWNER_USERNAME === ADMIN_ACCOUNT &&
-    Number.isInteger(port) &&
-    port > 0 &&
-    port <= 65535 &&
-    (secureValue === "true" || secureValue === "false") &&
+    (zoho || (Number.isInteger(port) && port > 0 && port <= 65535 &&
+    (secureValue === "true" || secureValue === "false"))) &&
     (() => {
       try {
-        return new URL(baseUrl).protocol === "https:";
+        const url = new URL(baseUrl);
+        return url.origin === "https://admin.housingpa.com" && !url.username && !url.password;
       } catch {
         return false;
       }
@@ -123,6 +125,10 @@ function productionDependencies(): PasswordResetDependencies {
     throttle: new ResetThrottle(),
     completeThrottle: new ResetThrottle(5),
     sendMail: async mail => {
+      if (environment.ADMIN_RESET_TRANSPORT === "zoho-api") {
+        await sendResetViaZoho(mail, environment);
+        return;
+      }
       const transporter = nodemailer.createTransport({
         host: environment.ADMIN_RESET_SMTP_HOST,
         port: Number(environment.ADMIN_RESET_SMTP_PORT),

@@ -66,6 +66,9 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth({ enabled: !publicReadOnly });
+  const [recoveryRequested, setRecoveryRequested] = useState(() =>
+    new URLSearchParams(window.location.hash.slice(1)).has("resetToken")
+  );
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -73,8 +76,8 @@ export default function DashboardLayout({
 
   if (!publicReadOnly && loading) return <DashboardLayoutSkeleton />;
 
-  if (!publicReadOnly && !user) {
-    return <SignInScreen />;
+  if (!publicReadOnly && (!user || recoveryRequested)) {
+    return <SignInScreen onResetComplete={() => setRecoveryRequested(false)} />;
   }
 
   if (!publicReadOnly && user?.role !== "admin") {
@@ -101,8 +104,9 @@ export default function DashboardLayout({
   );
 }
 
-function SignInScreen() {
+function SignInScreen({ onResetComplete }: { onResetComplete: () => void }) {
   const { loginWithCredentials, isCredentialLoginPending } = useAuth();
+  const utils = trpc.useUtils();
   const resetStatus = trpc.auth.passwordResetStatus.useQuery();
   const requestReset = trpc.auth.requestPasswordReset.useMutation();
   const completeReset = trpc.auth.completePasswordReset.useMutation();
@@ -110,9 +114,11 @@ function SignInScreen() {
     const token = new URLSearchParams(window.location.hash.slice(1)).get(
       "resetToken"
     );
-    if (token) window.history.replaceState({}, "", window.location.pathname);
     return token;
   });
+  useEffect(() => {
+    if (resetToken) window.history.replaceState({}, "", window.location.pathname);
+  }, [resetToken]);
   const [mode, setMode] = useState<"login" | "forgot" | "reset">(
     resetToken ? "reset" : "login"
   );
@@ -151,6 +157,8 @@ function SignInScreen() {
         setConfirmation("");
         setNotice("Password updated. Sign in with your new password.");
         setMode("login");
+        await utils.auth.me.invalidate();
+        onResetComplete();
       }
     } catch (caught) {
       setError(
