@@ -1,0 +1,29 @@
+{
+  "name": "qw-board-minutes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Live board meeting minutes recorder for community association management",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "start": "node dist/server.mjs",
+    "start:node22": "node --experimental-sqlite dist/server.mjs",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "esbuild": "^0.25.0",
+    "typescript": "~5.8.2"
+  }
+}
