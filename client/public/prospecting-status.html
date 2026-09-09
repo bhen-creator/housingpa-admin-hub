@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Prospecting Machine · Read-only status</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17312d;background:#f4f3ed;font-synthesis:none}*{box-sizing:border-box}body{margin:0;min-height:100vh}.shell{width:min(1120px,calc(100% - 32px));margin:auto;padding:32px 0 48px}.back{color:#2f6b5b;font-weight:750;text-decoration:none}.hero,.card{background:#fff;border:1px solid #d9e2da;box-shadow:0 14px 42px rgba(24,56,48,.07)}.hero{margin-top:24px;padding:30px;border-radius:30px}.eyebrow{margin:0;color:#4f806f;font-size:11px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}.hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}.hero h1{font-family:Georgia,serif;font-size:clamp(36px,6vw,58px);letter-spacing:-.045em;line-height:1;margin:12px 0 14px}.hero p{max-width:720px;color:#60716c;line-height:1.65;margin:0}.badge{display:inline-flex;align-items:center;border:1px solid #dbc991;background:#fff8df;color:#715a1f;border-radius:999px;padding:8px 12px;font-size:11px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px}.card{border-radius:24px;padding:24px}.card h2{margin:0 0 4px;font-size:20px}.muted{color:#6a7975;font-size:14px;line-height:1.55}.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.metric{padding:15px;border-radius:16px;background:#eef4ef}.metric strong{display:block;font-size:26px}.metric span{font-size:12px;color:#60716c}.ok{color:#267354}.warn{color:#876821}.rows{list-style:none;padding:0;margin:16px 0 0}.rows li{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid #e7ece7;font-size:14px}.rows li:last-child{border-bottom:0}.rows strong{font-variant-numeric:tabular-nums}.evidence{padding-left:20px;color:#60716c;line-height:1.6}.hash{overflow-wrap:anywhere;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;background:#eef4ef;padding:12px;border-radius:12px}.foot{margin:18px 4px 0;color:#778681;font-size:12px;line-height:1.6}@media(max-width:720px){.shell{width:min(100% - 24px,1120px);padding-top:20px}.hero{padding:23px;border-radius:24px}.hero-row{display:block}.badge{margin-top:18px;white-space:normal}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.card{padding:20px}}@media(prefers-color-scheme:dark){:root{color:#edf7f3;background:#101a1c}.hero,.card{background:#172729;border-color:#2c4947}.hero p,.muted,.rows li,.evidence,.foot,.metric span{color:#afc2bc}.metric,.hash{background:#203a36}.back{color:#9dc8ba}.badge{border-color:#665633;background:#352f1f;color:#e5c474}.rows li{border-color:#294440}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <a class="back" href="/">← Admin Hub</a>
+    <section class="hero">
+      <div class="hero-row">
+        <div>
+          <p class="eyebrow">HousingPA · aggregate evidence snapshot</p>
+          <h1>Prospecting Machine</h1>
+          <p>A bounded, read-only view of system posture, aggregate queue counts, and database integrity. This page has no production connection, record browser, outreach control, enrichment trigger, approval action, or mutation endpoint.</p>
+        </div>
+        <span class="badge">Snapshot · contact gated</span>
+      </div>
+    </section>
+    <div class="grid">
+      <section class="card">
+        <h2>Safety posture</h2>
+        <p class="muted">Control-plane metadata says scheduled prospecting is paused and contact remains closed pending exact approval.</p>
+        <div class="metrics">
+          <div class="metric"><strong class="ok">0</strong><span>enabled schedules</span></div>
+          <div class="metric"><strong class="ok">0</strong><span>queued actions</span></div>
+          <div class="metric"><strong class="ok">0</strong><span>active approvals</span></div>
+          <div class="metric"><strong class="ok">0</strong><span>outreach actions this review</span></div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Research queue</h2>
+        <p class="muted">Counts only; no record identifiers or prospect content are included.</p>
+        <ul class="rows">
+          <li><span>Open</span><strong>50</strong></li>
+          <li><span>In progress</span><strong>1</strong></li>
+          <li><span>Confirmed</span><strong>1</strong></li>
+          <li><span>Source unavailable</span><strong>8</strong></li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Integrity</h2>
+        <ul class="rows">
+          <li><span>SQLite quick check</span><strong class="ok">ok</strong></li>
+          <li><span>Database bytes</span><strong>3,481,600</strong></li>
+          <li><span>Application tables</span><strong>44</strong></li>
+          <li><span>Schema version</span><strong>2</strong></li>
+        </ul>
+        <p class="muted">SHA-256</p>
+        <div class="hash">660C189A543607A06B62455A441FF401C01EDE10C0D951A793AAAAD19F0C7C51</div>
+      </section>
+      <section class="card">
+        <h2>Evidence boundary</h2>
+        <ul class="evidence">
+          <li>SQLite was opened using immutable read-only mode.</li>
+          <li>Only schema metadata, integrity state, and aggregate counts were captured.</li>
+          <li>No names, addresses, routes, messages, or record identifiers appear here.</li>
+          <li>No database write, outreach, enrichment, approval consumption, or schedule activation occurred.</li>
+        </ul>
+      </section>
+    </div>
+    <p class="foot">Snapshot captured 2026-09-03 13:50 EDT. This is not live telemetry and performs no production action. Refresh requires a separately reviewed aggregate-only evidence capture.</p>
+  </main>
+</body>
+</html>

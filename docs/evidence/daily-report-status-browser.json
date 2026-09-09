@@ -1,0 +1,31 @@
+{
+  "targetUrl": "http://127.0.0.1:4182/daily-report-status.html",
+  "checks": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1100,
+      "title": "Daily Report · Read-only status",
+      "heading": "Daily Report",
+      "hasProductionAction": false,
+      "hasNetworkScript": false,
+      "horizontalOverflow": false,
+      "snapshotLabel": true,
+      "activationBoundaryVisible": true,
+      "screenshot": "C:/Users/hnosm/.openclaw/workspace/.tmp/housingpa-admin-hub/docs/evidence/daily-report-status-desktop.png"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "title": "Daily Report · Read-only status",
+      "heading": "Daily Report",
+      "hasProductionAction": false,
+      "hasNetworkScript": false,
+      "horizontalOverflow": false,
+      "snapshotLabel": true,
+      "activationBoundaryVisible": true,
+      "screenshot": "C:/Users/hnosm/.openclaw/workspace/.tmp/housingpa-admin-hub/docs/evidence/daily-report-status-mobile.png"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "snapshotAt": "2026-09-03T17:50:45.830975Z",
+  "scope": "Aggregate-only read snapshot; not a live control plane",
+  "source": {
+    "system": "CommandOS Prospecting Machines",
+    "database": "data/prospect_intelligence.sqlite3",
+    "databaseBytes": 3481600,
+    "databaseSha256": "660C189A543607A06B62455A441FF401C01EDE10C0D951A793AAAAD19F0C7C51",
+    "quickCheck": "ok",
+    "tableCount": 44,
+    "schemaVersion": 2,
+    "migrationCount": 1
+  },
+  "safety": {
+    "prospectingMachineEnabled": false,
+    "contactCapability": "CLOSED_PENDING_EXACT_APPROVAL",
+    "generalRestartAuthorized": false,
+    "scheduledJobsEnabled": 0,
+    "scheduledJobsTotal": 10,
+    "outreachStarted": false,
+    "enrichmentTriggered": false,
+    "approvalConsumed": false,
+    "databaseMutated": false
+  },
+  "queues": {
+    "actions": {},
+    "research": {
+      "CONFIRMED": 1,
+      "IN_PROGRESS": 1,
+      "OPEN": 50,
+      "SOURCE_UNAVAILABLE": 8
+    },
+    "offlineTasks": {},
+    "approvals": {}
+  },
+  "machines": {
+    "prospectingMachine": "CONTROL_PLANE_ACTIVE_SCHEDULED_EXECUTION_PAUSED_CONTACT_GATED",
+    "weekendResearchMachine": "ACTIVE_RESEARCH_ONLY_CONTACT_TECHNICALLY_BLOCKED"
+  },
+  "evidence": [
+    "Aggregate COUNT and integrity queries used SQLite immutable read-only mode.",
+    "No prospect names, addresses, contact routes, message bodies, or record identifiers were read into this surface.",
+    "No outreach, enrichment, approval consumption, scheduler activation, or database mutation occurred."
+  ]
+}

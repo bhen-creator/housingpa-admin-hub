@@ -13,6 +13,23 @@ export type ToolWorkspaceDefinition = {
   updatedAt: string;
 };
 
+export type PublicCardPresentation = {
+  label: string;
+  action: string;
+  tone: string;
+};
+
+export const PUBLIC_CARD_PRESENTATIONS: Readonly<
+  Record<string, PublicCardPresentation>
+> = {
+  "board-minutes": {
+    label: "Live",
+    action: "Open app",
+    tone:
+      "border-[#c7ddd2] bg-[#eef7f2] text-[#306b59] dark:border-[#315b50] dark:bg-[#19352f] dark:text-[#a8d5c5]",
+  },
+};
+
 export const PUBLIC_CARD_DESTINATIONS: Readonly<
   Record<string, PublicCardDestination>
 > = {
@@ -37,12 +54,16 @@ export const PUBLIC_CARD_DESTINATIONS: Readonly<
     href: "https://housingpa.com/ideamachine/",
   },
   "prospecting-machine": {
-    kind: "workspace",
-    href: "/workspaces/prospecting-machine",
+    kind: "external",
+    href: "/prospecting-status.html",
   },
   "daily-report": {
-    kind: "workspace",
-    href: "/workspaces/daily-report",
+    kind: "external",
+    href: "/daily-report-status.html",
+  },
+  "board-minutes": {
+    kind: "external",
+    href: "https://housingpa.com/minutes/",
   },
 };
 

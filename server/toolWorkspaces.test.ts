@@ -2,6 +2,7 @@ import {
   getPublicCardDestination,
   getToolWorkspace,
   PUBLIC_CARD_DESTINATIONS,
+  PUBLIC_CARD_PRESENTATIONS,
   TOOL_WORKSPACES,
 } from "../client/src/lib/toolWorkspaces";
 import { describe, expect, it } from "vitest";
@@ -14,6 +15,7 @@ const CORE_SLUGS = [
   "idea-generator",
   "prospecting-machine",
   "daily-report",
+  "board-minutes",
 ];
 
 describe("public Admin Hub card destinations", () => {
@@ -24,7 +26,7 @@ describe("public Admin Hub card destinations", () => {
     }
   });
 
-  it("keeps the three verified application routes external", () => {
+  it("keeps verified apps and approved static status pages externally addressable", () => {
     expect(getPublicCardDestination("quote-pilot")).toEqual({
       kind: "external",
       href: "https://housingpa.com/repair/",
@@ -37,15 +39,30 @@ describe("public Admin Hub card destinations", () => {
       kind: "external",
       href: "https://housingpa.com/ideamachine/",
     });
+    expect(getPublicCardDestination("prospecting-machine")).toEqual({
+      kind: "external",
+      href: "/prospecting-status.html",
+    });
+    expect(getPublicCardDestination("daily-report")).toEqual({
+      kind: "external",
+      href: "/daily-report-status.html",
+    });
+    expect(getPublicCardDestination("board-minutes")).toEqual({
+      kind: "external",
+      href: "https://housingpa.com/minutes/",
+    });
   });
 
-  it("uses isolated status workspaces for apps without verified deployments", () => {
-    for (const slug of [
-      "email-app",
-      "snooz-app",
-      "prospecting-machine",
-      "daily-report",
-    ]) {
+  it("presents the deployed Board Meeting Minutes card as live", () => {
+    expect(PUBLIC_CARD_PRESENTATIONS["board-minutes"]).toMatchObject({
+      label: "Live",
+      action: "Open app",
+    });
+    expect(Object.keys(PUBLIC_CARD_PRESENTATIONS)).toEqual(["board-minutes"]);
+  });
+
+  it("uses isolated status workspaces for remaining apps without verified deployments", () => {
+    for (const slug of ["email-app", "snooz-app"]) {
       expect(getPublicCardDestination(slug)).toEqual({
         kind: "workspace",
         href: `/workspaces/${slug}`,

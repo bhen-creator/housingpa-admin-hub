@@ -1,0 +1,31 @@
+{
+  "targetUrl": "http://127.0.0.1:4181/prospecting-status.html",
+  "checks": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1100,
+      "title": "Prospecting Machine · Read-only status",
+      "heading": "Prospecting Machine",
+      "hasProductionAction": false,
+      "hasNetworkScript": false,
+      "horizontalOverflow": false,
+      "snapshotLabel": true,
+      "integrityHashVisible": true,
+      "screenshot": "C:/Users/hnosm/.openclaw/workspace/.tmp/housingpa-admin-hub/docs/evidence/prospecting-status-desktop.png"
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "title": "Prospecting Machine · Read-only status",
+      "heading": "Prospecting Machine",
+      "hasProductionAction": false,
+      "hasNetworkScript": false,
+      "horizontalOverflow": false,
+      "snapshotLabel": true,
+      "integrityHashVisible": true,
+      "screenshot": "C:/Users/hnosm/.openclaw/workspace/.tmp/housingpa-admin-hub/docs/evidence/prospecting-status-mobile.png"
+    }
+  ]
+}

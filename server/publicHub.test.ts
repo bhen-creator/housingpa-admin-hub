@@ -38,7 +38,7 @@ describe("public read-only Hub", () => {
 
     const cards = await caller.publicHub.list();
 
-    expect(cards).toHaveLength(7);
+    expect(cards).toHaveLength(8);
     expect(cards[0]).toMatchObject({
       slug: "quote-pilot",
       name: "QuotePilot",
@@ -48,6 +48,9 @@ describe("public read-only Hub", () => {
     expect(cards.find(card => card.slug === "bids-ai")).toMatchObject({
       publicLaunchUrl: "https://bysania.com/apps/bidsai/",
     });
+    expect(cards.find(card => card.slug === "board-minutes")).toMatchObject({
+      publicLaunchUrl: "https://housingpa.com/minutes/",
+    });
     for (const card of cards) {
       expect(card).not.toHaveProperty("destinationUrl");
       expect(card).not.toHaveProperty("internalRoute");
@@ -55,7 +58,7 @@ describe("public read-only Hub", () => {
       expect(card).not.toHaveProperty("verifiedAt");
       expect(card).not.toHaveProperty("blockedReason");
 
-      if (!["quote-pilot", "bids-ai"].includes(card.slug)) {
+      if (!["quote-pilot", "bids-ai", "board-minutes"].includes(card.slug)) {
         expect(card).not.toHaveProperty("publicLaunchUrl");
       }
     }
