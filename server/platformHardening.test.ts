@@ -8,14 +8,14 @@ describe("platform hardening", () => {
     expect(isApplicationReady({})).toBe(false);
     expect(
       isApplicationReady({
-        OWNER_USERNAME: "admin",
+        OWNER_USERNAME: "ben@housingpa.com",
         OWNER_PASSWORD_SCRYPT: "salt:hash",
         SESSION_SECRET: "session-secret",
       })
     ).toBe(true);
     expect(
       isApplicationReady({
-        OWNER_USERNAME: "admin",
+        OWNER_USERNAME: "ben@housingpa.com",
         OWNER_PASSWORD_SCRYPT: "salt:hash",
         JWT_SECRET: "legacy-compatible-session-secret",
       })

@@ -14,6 +14,6 @@ export async function createContext(
   return {
     req: opts.req,
     res: opts.res,
-    user: getLocalAdminSession(opts.req),
+    user: await getLocalAdminSession(opts.req),
   };
 }

@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
+import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import {
   CalendarClock,
@@ -81,7 +82,11 @@ export default function DashboardLayout({
   }
 
   if (publicReadOnly) {
-    return <main className="min-h-screen bg-[#f5f4ef] dark:bg-[#101a1c]">{children}</main>;
+    return (
+      <main className="min-h-screen bg-[#f5f4ef] dark:bg-[#101a1c]">
+        {children}
+      </main>
+    );
   }
 
   return (
@@ -98,19 +103,70 @@ export default function DashboardLayout({
 
 function SignInScreen() {
   const { loginWithCredentials, isCredentialLoginPending } = useAuth();
+  const resetStatus = trpc.auth.passwordResetStatus.useQuery();
+  const requestReset = trpc.auth.requestPasswordReset.useMutation();
+  const completeReset = trpc.auth.completePasswordReset.useMutation();
+  const [resetToken] = useState(() => {
+    const token = new URLSearchParams(window.location.hash.slice(1)).get(
+      "resetToken"
+    );
+    if (token) window.history.replaceState({}, "", window.location.pathname);
+    return token;
+  });
+  const [mode, setMode] = useState<"login" | "forgot" | "reset">(
+    resetToken ? "reset" : "login"
+  );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const submitCredentials = async (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (resetStatus.data && !resetStatus.data.enabled && mode !== "login") {
+      setMode("login");
+      setError("");
+      setNotice("");
+    }
+  }, [mode, resetStatus.data]);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setNotice("");
     try {
-      await loginWithCredentials({ username, password });
-    } catch {
-      setError("The administrator credentials were not accepted.");
+      if (mode === "login") {
+        await loginWithCredentials({ username, password });
+      } else if (mode === "forgot") {
+        const result = await requestReset.mutateAsync({ email: username });
+        setNotice(result.message);
+      } else {
+        if (password !== confirmation) {
+          setError("The passwords do not match.");
+          return;
+        }
+        await completeReset.mutateAsync({ token: resetToken ?? "", password });
+        window.history.replaceState({}, "", window.location.pathname);
+        setPassword("");
+        setConfirmation("");
+        setNotice("Password updated. Sign in with your new password.");
+        setMode("login");
+      }
+    } catch (caught) {
+      setError(
+        mode === "login"
+          ? "The administrator credentials were not accepted."
+          : caught instanceof Error
+            ? caught.message
+            : "The request could not be completed."
+      );
     }
   };
+
+  const pending =
+    isCredentialLoginPending ||
+    requestReset.isPending ||
+    completeReset.isPending;
 
   return (
     <main className="relative grid min-h-screen overflow-hidden bg-[#0c1b1e] px-6 py-8 text-[#f8f6ef] place-items-center">
@@ -122,59 +178,129 @@ function SignInScreen() {
             Administrator access
           </p>
           <h1 className="mt-4 font-serif text-4xl leading-[1.08] tracking-[-0.04em] sm:text-5xl">
-            A considered place to work.
+            {mode === "reset"
+              ? "Choose a new password."
+              : mode === "forgot"
+                ? "Reset your password."
+                : "A considered place to work."}
           </h1>
           <p className="mt-5 max-w-sm text-sm leading-6 text-white/65">
-            Sign in with your authorized HousingPA account to access the
-            internal tool hub.
+            {mode === "login"
+              ? "Sign in with your authorized HousingPA account to access the internal tool hub."
+              : mode === "forgot"
+                ? "Enter the authorized account email. The response is intentionally generic."
+                : "Use at least 14 characters with uppercase, lowercase, a number, and a symbol."}
           </p>
         </div>
-        <form className="mt-8 space-y-4" onSubmit={submitCredentials}>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="admin-username"
-              className="text-xs font-semibold text-white/70"
-            >
-              Username
-            </Label>
-            <Input
-              id="admin-username"
-              value={username}
-              onChange={event => setUsername(event.target.value)}
-              autoComplete="username"
-              required
-              className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="admin-password"
-              className="text-xs font-semibold text-white/70"
-            >
-              Password
-            </Label>
-            <Input
-              id="admin-password"
-              type="password"
-              value={password}
-              onChange={event => setPassword(event.target.value)}
-              autoComplete="current-password"
-              required
-              className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
-            />
-          </div>
+        <form className="mt-8 space-y-4" onSubmit={submit}>
+          {mode !== "reset" && (
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="admin-username"
+                className="text-xs font-semibold text-white/70"
+              >
+                {mode === "forgot" ? "Email" : "Username"}
+              </Label>
+              <Input
+                id="admin-username"
+                type={mode === "forgot" ? "email" : "text"}
+                value={username}
+                onChange={event => setUsername(event.target.value)}
+                autoComplete="username"
+                required
+                className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
+              />
+            </div>
+          )}
+          {mode !== "forgot" && (
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="admin-password"
+                className="text-xs font-semibold text-white/70"
+              >
+                {mode === "reset" ? "New password" : "Password"}
+              </Label>
+              <Input
+                id="admin-password"
+                type="password"
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                autoComplete={
+                  mode === "reset" ? "new-password" : "current-password"
+                }
+                required
+                className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
+              />
+            </div>
+          )}
+          {mode === "reset" && (
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="admin-password-confirmation"
+                className="text-xs font-semibold text-white/70"
+              >
+                Confirm new password
+              </Label>
+              <Input
+                id="admin-password-confirmation"
+                type="password"
+                value={confirmation}
+                onChange={event => setConfirmation(event.target.value)}
+                autoComplete="new-password"
+                required
+                className="h-11 rounded-xl border-white/12 bg-white/10 text-white placeholder:text-white/35"
+              />
+            </div>
+          )}
           {error && (
             <p role="alert" className="text-xs font-medium text-[#f5bf9e]">
               {error}
             </p>
           )}
+          {notice && (
+            <p role="status" className="text-xs font-medium text-[#b8ddcf]">
+              {notice}
+            </p>
+          )}
           <Button
-            disabled={isCredentialLoginPending}
+            disabled={pending}
             className="h-12 w-full rounded-xl bg-[#d9b879] text-sm font-semibold text-[#172528] shadow-[0_12px_30px_rgba(0,0,0,0.24)] transition hover:bg-[#edd39e] active:scale-[0.98]"
           >
-            {isCredentialLoginPending ? "Signing in…" : "Sign in securely"}
+            {pending
+              ? "Please wait…"
+              : mode === "login"
+                ? "Sign in securely"
+                : mode === "forgot"
+                  ? "Send reset link"
+                  : "Update password"}
           </Button>
         </form>
+        {resetStatus.data?.enabled && mode === "login" && (
+          <button
+            type="button"
+            onClick={() => {
+              setMode("forgot");
+              setError("");
+              setNotice("");
+            }}
+            className="mt-5 w-full text-center text-xs text-white/60 underline underline-offset-4 hover:text-white"
+          >
+            Forgot password?
+          </button>
+        )}
+        {mode !== "login" && (
+          <button
+            type="button"
+            onClick={() => {
+              setMode("login");
+              setError("");
+              setNotice("");
+            }}
+            className="mt-5 w-full text-center text-xs text-white/60 underline underline-offset-4 hover:text-white"
+          >
+            Back to sign in
+          </button>
+        )}
         <p className="mt-5 text-center text-xs leading-5 text-white/40">
           Restricted to approved administrators.
         </p>

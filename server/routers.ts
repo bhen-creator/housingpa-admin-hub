@@ -16,6 +16,7 @@ import {
   recordDailyReportRun,
   saveDailyReportSettings,
   upsertInternalTool,
+  readAdminAuthState,
 } from "./db";
 import {
   createDailyReportService,
@@ -35,6 +36,11 @@ import {
 } from "./localAdminAuth";
 import { auditLoginFailure, loginThrottle } from "./loginThrottle";
 import { isPublicReadOnlyHubEnabled } from "./publicReadOnlyHub";
+import {
+  ADMIN_ACCOUNT,
+  passwordResetConfiguration,
+  passwordResetService,
+} from "./adminPasswordReset";
 
 export const LOCAL_AUTH_ERROR_MESSAGE = "Authentication failed.";
 const allowLocalHttp = process.env.NODE_ENV !== "production";
@@ -207,12 +213,58 @@ export const appRouter = router({
 
         loginThrottle.recordSuccess(input.username, clientIp);
 
+        const authState = await readAdminAuthState();
+
         ctx.res.cookie(
           LOCAL_ADMIN_COOKIE_NAME,
-          createAdminSession(process.env.OWNER_USERNAME || input.username),
+          createAdminSession(
+            process.env.OWNER_USERNAME || input.username,
+            undefined,
+            undefined,
+            authState?.sessionVersion ?? 0
+          ),
           localAdminCookieOptions()
         );
         return { success: true } as const;
+      }),
+    passwordResetStatus: publicProcedure.query(() => ({
+      enabled: passwordResetConfiguration().enabled,
+    })),
+    requestPasswordReset: publicProcedure
+      .input(z.object({ email: z.string().trim().max(320) }))
+      .mutation(({ ctx, input }) =>
+        passwordResetService.requestReset(input.email, requestClientIp(ctx.req))
+      ),
+    completePasswordReset: publicProcedure
+      .input(
+        z.object({
+          token: z.string().max(256),
+          password: z.string().max(256),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const result = await passwordResetService.completeReset(
+          input.token,
+          input.password,
+          requestClientIp(ctx.req)
+        );
+        if (result.validationError) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: result.validationError,
+          });
+        }
+        if (!result.success) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This reset link is invalid or has expired.",
+          });
+        }
+        ctx.res.clearCookie(LOCAL_ADMIN_COOKIE_NAME, {
+          ...localAdminCookieOptions(),
+          maxAge: -1,
+        });
+        return { success: true as const, account: ADMIN_ACCOUNT };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       ctx.res.clearCookie(LOCAL_ADMIN_COOKIE_NAME, {

@@ -1,10 +1,11 @@
 import type { Express } from "express";
+import { ADMIN_ACCOUNT } from "./adminAccount";
 
 export function isApplicationReady(
   environment: NodeJS.ProcessEnv = process.env
 ) {
   return Boolean(
-    environment.OWNER_USERNAME?.trim() &&
+    environment.OWNER_USERNAME === ADMIN_ACCOUNT &&
       environment.OWNER_PASSWORD_SCRYPT?.trim() &&
       (environment.SESSION_SECRET?.trim() || environment.JWT_SECRET?.trim())
   );

@@ -33,6 +33,21 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+export const adminAuthState = mysqlTable("adminAuthState", {
+  id: int("id").primaryKey(),
+  passwordScrypt: text("passwordScrypt").notNull(),
+  sessionVersion: int("sessionVersion").notNull().default(1),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const adminPasswordResetTokens = mysqlTable("adminPasswordResetTokens", {
+  tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const internalTools = mysqlTable("internalTools", {
   id: int("id").autoincrement().primaryKey(),
   slug: varchar("slug", { length: 96 }).notNull().unique(),

@@ -6,6 +6,8 @@ import {
 } from "node:crypto";
 import { promisify } from "node:util";
 import type { Request } from "express";
+import { readAdminAuthState } from "./db";
+import { ADMIN_ACCOUNT } from "./adminAccount";
 
 const scrypt = promisify(scryptCallback) as unknown as (
   password: string,
@@ -19,6 +21,7 @@ export const LOCAL_ADMIN_COOKIE_NAME = "housingpa-admin-session";
 type AdminSessionPayload = {
   username: string;
   expiresAt: number;
+  sessionVersion: number;
 };
 
 function getSessionSecret() {
@@ -61,8 +64,14 @@ export async function verifyOwnerCredentials(
   password: string
 ) {
   const configuredUsername = process.env.OWNER_USERNAME;
-  const configuredHash = process.env.OWNER_PASSWORD_SCRYPT;
-  if (!configuredUsername || !configuredHash || username !== configuredUsername)
+  const state = await readAdminAuthState();
+  const configuredHash =
+    state?.passwordScrypt ?? process.env.OWNER_PASSWORD_SCRYPT;
+  if (
+    configuredUsername !== ADMIN_ACCOUNT ||
+    !configuredHash ||
+    username !== ADMIN_ACCOUNT
+  )
     return false;
 
   const parsed = parseScryptHash(configuredHash);
@@ -88,22 +97,25 @@ export async function hashPassword(
 export function createAdminSession(
   username: string,
   secret = getSessionSecret(),
-  now = Date.now()
+  now = Date.now(),
+  sessionVersion = 0
 ) {
   if (!secret)
     throw new Error("Administrator session secret is not configured.");
   const payload: AdminSessionPayload = {
     username,
     expiresAt: now + SESSION_DURATION_MS,
+    sessionVersion,
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${encoded}.${signature(encoded, secret)}`;
 }
 
-export function getLocalAdminSession(
+export async function getLocalAdminSession(
   request: Request,
   secret = getSessionSecret(),
-  now = Date.now()
+  now = Date.now(),
+  expectedSessionVersion?: number
 ) {
   if (!secret) return null;
   const token = parseCookie(request, LOCAL_ADMIN_COOKIE_NAME);
@@ -124,8 +136,14 @@ export function getLocalAdminSession(
     const payload = JSON.parse(
       Buffer.from(encoded, "base64url").toString("utf8")
     ) as AdminSessionPayload;
+    const state =
+      expectedSessionVersion === undefined ? await readAdminAuthState() : null;
+    const currentSessionVersion =
+      expectedSessionVersion ?? state?.sessionVersion ?? 0;
     if (
-      payload.username !== process.env.OWNER_USERNAME ||
+      payload.username !== ADMIN_ACCOUNT ||
+      process.env.OWNER_USERNAME !== ADMIN_ACCOUNT ||
+      payload.sessionVersion !== currentSessionVersion ||
       !Number.isFinite(payload.expiresAt) ||
       payload.expiresAt <= now
     )

@@ -6,9 +6,11 @@ import {
   DAILY_REPORT_SETTINGS_ID,
   DEFAULT_DAILY_REPORT_SETTINGS,
 } from "@shared/dailyReport";
-import { and, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  adminAuthState,
+  adminPasswordResetTokens,
   dailyReportRuns,
   dailyReportSettings,
   InsertInternalTool,
@@ -69,6 +71,64 @@ export async function upsertInternalTool(tool: InsertInternalTool) {
         blockedReason: tool.blockedReason,
       },
     });
+}
+
+export async function readAdminAuthState() {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(adminAuthState)
+    .where(eq(adminAuthState.id, 1))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function storeAdminPasswordResetToken(
+  tokenHash: string,
+  expiresAt: Date
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Password reset storage is unavailable.");
+  await db.insert(adminPasswordResetTokens).values({ tokenHash, expiresAt });
+}
+
+export async function consumeAdminPasswordResetToken(
+  tokenHash: string,
+  passwordScrypt: string,
+  now: Date
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Password reset storage is unavailable.");
+
+  return db.transaction(async transaction => {
+    const [claim] = await transaction
+      .update(adminPasswordResetTokens)
+      .set({ usedAt: now })
+      .where(
+        and(
+          eq(adminPasswordResetTokens.tokenHash, tokenHash),
+          isNull(adminPasswordResetTokens.usedAt),
+          gt(adminPasswordResetTokens.expiresAt, now)
+        )
+      );
+    if (claim.affectedRows !== 1) return false;
+
+    await transaction
+      .insert(adminAuthState)
+      .values({ id: 1, passwordScrypt, sessionVersion: 1 })
+      .onDuplicateKeyUpdate({
+        set: {
+          passwordScrypt,
+          sessionVersion: sql`${adminAuthState.sessionVersion} + 1`,
+        },
+      });
+    await transaction
+      .update(adminPasswordResetTokens)
+      .set({ usedAt: now })
+      .where(isNull(adminPasswordResetTokens.usedAt));
+    return true;
+  });
 }
 
 export async function readDailyReportSettings() {

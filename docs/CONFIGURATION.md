@@ -10,6 +10,44 @@ The production service requires these secret-target names:
 
 Secret values belong in the deployment provider's protected environment configuration. They must not be committed, logged, or included in evidence packages.
 
+The sole supported administrator identifier is exactly `ben@housingpa.com`.
+Readiness and local authentication fail closed for any other value.
+
+## SMTP password reset (dormant until fully configured)
+
+The login page shows **Forgot password?** only when every required setting is
+present and valid. The reset URL must be HTTPS and `DATABASE_URL` must point to
+a database with migration `0005_romantic_microbe.sql` applied.
+
+Required Coolify runtime variables:
+
+- `OWNER_USERNAME` (must be exactly `ben@housingpa.com`)
+- `DATABASE_URL`
+- `ADMIN_RESET_SMTP_HOST` (Zoho: `smtp.zoho.com`)
+- `ADMIN_RESET_SMTP_PORT` (Zoho implicit TLS: `465`)
+- `ADMIN_RESET_SMTP_SECURE` (`true` for port 465; `false` for STARTTLS)
+- `ADMIN_RESET_SMTP_USERNAME`
+- `ADMIN_RESET_SMTP_PASSWORD` (a protected provider credential/app password)
+- `ADMIN_RESET_SMTP_FROM`
+- `ADMIN_RESET_BASE_URL` (canonical HTTPS login URL, normally `https://admin.housingpa.com/`)
+
+Keep all SMTP variables runtime-only and mark the password as a protected
+secret. The implementation stores only SHA-256 reset-token hashes, expires
+tokens after 15 minutes, permits three reset requests per account/IP window,
+uses generic public responses, and places the token in the URL fragment so it
+is not sent in HTTP requests or ordinary proxy access logs. A successful reset
+atomically consumes the token, invalidates every outstanding reset token,
+increments the persisted session version, and thereby invalidates all prior
+sessions.
+
+Safe activation order: apply migration `0005_romantic_microbe.sql`; configure
+all runtime variables; verify SMTP connectivity and delivery using the
+protected credential; deploy the candidate; confirm the status query enables
+the link; request one reset; verify delivery to `ben@housingpa.com`; use the
+link once; confirm reuse and the prior session/password are rejected. Remove
+or blank any required SMTP variable to hide and disable the flow without
+weakening the existing login gate.
+
 ## Public read-only Hub
 
 `PUBLIC_READ_ONLY_HUB` is optional and defaults to disabled. Set its runtime value to exactly `true` only when the dashboard must be viewable without a login. This mode exposes a fixed, sanitized core-card status catalogue only: no generic destinations, internal routes, future tools, verification evidence, blocker details, settings, add/edit controls, or write actions. All existing APIs that change data, trigger notifications, or manage tool destinations remain administrator-only.

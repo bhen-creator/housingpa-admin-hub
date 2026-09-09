@@ -15,25 +15,25 @@ afterEach(() => {
 
 describe("local Coolify administrator authentication", () => {
   it("verifies the configured scrypt password and rejects an incorrect password", async () => {
-    process.env.OWNER_USERNAME = "housingpa-admin";
+    process.env.OWNER_USERNAME = "ben@housingpa.com";
     process.env.OWNER_PASSWORD_SCRYPT = await hashPassword(
       "correct-password",
       "unit-test-salt"
     );
 
     await expect(
-      verifyOwnerCredentials("housingpa-admin", "correct-password")
+      verifyOwnerCredentials("ben@housingpa.com", "correct-password")
     ).resolves.toBe(true);
     await expect(
-      verifyOwnerCredentials("housingpa-admin", "incorrect-password")
+      verifyOwnerCredentials("ben@housingpa.com", "incorrect-password")
     ).resolves.toBe(false);
   });
 
-  it("accepts a live signed session and rejects tampered or expired sessions", () => {
-    process.env.OWNER_USERNAME = "housingpa-admin";
+  it("accepts a live signed session and rejects tampered or expired sessions", async () => {
+    process.env.OWNER_USERNAME = "ben@housingpa.com";
     const issuedAt = Date.parse("2026-08-30T12:00:00Z");
     const token = createAdminSession(
-      "housingpa-admin",
+      "ben@housingpa.com",
       "unit-test-session-secret",
       issuedAt
     );
@@ -45,23 +45,28 @@ describe("local Coolify administrator authentication", () => {
     } as never;
 
     expect(
-      getLocalAdminSession(request, "unit-test-session-secret", issuedAt + 1)
-        ?.role
+      (
+        await getLocalAdminSession(
+          request,
+          "unit-test-session-secret",
+          issuedAt + 1
+        )
+      )?.role
     ).toBe("admin");
-    expect(
+    await expect(
       getLocalAdminSession(
         tamperedRequest,
         "unit-test-session-secret",
         issuedAt + 1
       )
-    ).toBeNull();
-    expect(
+    ).resolves.toBeNull();
+    await expect(
       getLocalAdminSession(
         request,
         "unit-test-session-secret",
         issuedAt + SESSION_DURATION_MS + 1
       )
-    ).toBeNull();
+    ).resolves.toBeNull();
   });
 
   it("uses secure and HttpOnly cookies in production", () => {
@@ -76,5 +81,23 @@ describe("local Coolify administrator authentication", () => {
     } finally {
       process.env.NODE_ENV = previousNodeEnv;
     }
+  });
+
+  it("rejects every session issued before the credential version changes", async () => {
+    process.env.OWNER_USERNAME = "ben@housingpa.com";
+    const now = Date.parse("2026-09-09T20:00:00Z");
+    const token = createAdminSession(
+      "ben@housingpa.com",
+      "unit-test-session-secret",
+      now,
+      7
+    );
+    const request = {
+      headers: { cookie: `housingpa-admin-session=${token}` },
+    } as never;
+
+    await expect(
+      getLocalAdminSession(request, "unit-test-session-secret", now + 1, 8)
+    ).resolves.toBeNull();
   });
 });

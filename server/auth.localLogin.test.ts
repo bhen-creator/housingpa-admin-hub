@@ -24,7 +24,7 @@ afterEach(() => {
 
 describe("auth.localLogin", () => {
   it("uses one generic error for invalid credentials and active backoff", async () => {
-    process.env.OWNER_USERNAME = "generic-error-admin";
+    process.env.OWNER_USERNAME = "ben@housingpa.com";
     process.env.OWNER_PASSWORD_SCRYPT = await hashPassword(
       "correct-password",
       "generic-error-salt"
@@ -36,7 +36,7 @@ describe("auth.localLogin", () => {
 
     await expect(
       caller.auth.localLogin({
-        username: "generic-error-admin",
+        username: "ben@housingpa.com",
         password: "incorrect-password",
       })
     ).rejects.toMatchObject({
@@ -46,7 +46,7 @@ describe("auth.localLogin", () => {
 
     await expect(
       caller.auth.localLogin({
-        username: "generic-error-admin",
+        username: "ben@housingpa.com",
         password: "incorrect-password",
       })
     ).rejects.toMatchObject({
