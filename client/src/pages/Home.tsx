@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getPublicCardDestination } from "@/lib/toolWorkspaces";
+import {
+  getPublicCardDestination,
+  PUBLIC_CARD_PRESENTATIONS,
+} from "@/lib/toolWorkspaces";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import type { InternalToolConfig, PublicToolCard } from "@shared/toolCatalog";
@@ -151,6 +154,7 @@ function ToolCard({
   const status =
     verifiedPublicStatus ||
     workspaceStatus ||
+    (publicReadOnly && PUBLIC_CARD_PRESENTATIONS[tool.slug]) ||
     (publicReadOnly && PUBLIC_STATUS_PRESENTATION[tool.slug]) ||
     (isInternalControl
       ? {

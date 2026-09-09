@@ -2,6 +2,7 @@ import {
   getPublicCardDestination,
   getToolWorkspace,
   PUBLIC_CARD_DESTINATIONS,
+  PUBLIC_CARD_PRESENTATIONS,
   TOOL_WORKSPACES,
 } from "../client/src/lib/toolWorkspaces";
 import { describe, expect, it } from "vitest";
@@ -50,6 +51,14 @@ describe("public Admin Hub card destinations", () => {
       kind: "external",
       href: "https://housingpa.com/minutes/",
     });
+  });
+
+  it("presents the deployed Board Meeting Minutes card as live", () => {
+    expect(PUBLIC_CARD_PRESENTATIONS["board-minutes"]).toMatchObject({
+      label: "Live",
+      action: "Open app",
+    });
+    expect(Object.keys(PUBLIC_CARD_PRESENTATIONS)).toEqual(["board-minutes"]);
   });
 
   it("uses isolated status workspaces for remaining apps without verified deployments", () => {
